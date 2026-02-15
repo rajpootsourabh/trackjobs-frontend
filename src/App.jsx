@@ -1,0 +1,108 @@
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Hooks
+import { useAuth } from './hooks/useAuth';
+
+// Components
+import ErrorBoundary from './components/feedback/ErrorBoundary';
+import ProtectedRoute from './components/routes/ProtectedRoute';
+
+// Pages
+import { Login, Register, ForgotPassword, ResetPassword } from './features/auth';
+import NotFound from './pages/NotFound';
+import Unauthorized from './pages/Unauthorized';
+
+// Layout
+import { Layout } from './features/dashboard';
+
+// Client Pages
+import ClientList from './features/clients/pages/ClientList';
+import ClientCreate from './features/clients/pages/ClientCreate';
+import ClientEdit from './features/clients/pages/ClientEdit';
+// import ClientDetails from './features/clients/pages/ClientDetails';
+
+// Quote Pages
+import QuoteList from './features/quotes/pages/QuoteList';
+import QuoteCreate from './features/quotes/pages/QuoteCreate';
+import QuoteEdit from './features/quotes/pages/QuoteEdit';
+// import QuoteDetails from './features/quotes/pages/QuoteDetails';
+
+// Dashboard
+import Dashboard from './features/dashboard/Dashboard';
+import NotYetDesigned from './pages/NotYetDesigned';
+
+const AppContent = () => {
+  const { loadAuthState, user } = useAuth();
+
+  useEffect(() => {
+    loadAuthState();
+  }, [loadAuthState]);
+
+  return (
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/auth/login" element={<Login />} />
+      <Route path="/auth/register" element={<Register />} />
+      <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+      <Route path="/auth/reset-password" element={<ResetPassword />} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
+
+      {/* Protected Routes */}
+      <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<Dashboard />} />
+
+        {/* Customer/Client Module - RESTful naming */}
+        <Route path="/customers" element={<ClientList />} />
+        <Route path="/customers/new" element={<ClientCreate />} />
+        {/* <Route path="/customers/:id" element={<ClientDetails />} /> */}
+        <Route path="/customers/:id/edit" element={<ClientEdit />} />
+
+        {/* Quotes Module - RESTful naming */}
+        <Route path="/quotes" element={<QuoteList />} />
+        <Route path="/quotes/new" element={<QuoteCreate />} />
+        {/* <Route path="/quotes/:id" element={<QuoteDetails />} /> */}
+        <Route path="/quotes/:id/edit" element={<QuoteEdit />} />
+
+        {/* Future Modules with RESTful naming */}
+        <Route path="/jobs" element={<NotYetDesigned />} />
+        {/* <Route path="/jobs/new" element={<div>Create Job</div>} />
+        <Route path="/jobs/:id" element={<div>Job Details</div>} />
+        <Route path="/jobs/:id/edit" element={<div>Edit Job</div>} /> */}
+
+        <Route path="/schedule" element={<NotYetDesigned />} />
+        {/* <Route path="/invoices" element={<div>Invoices</div>} />
+        <Route path="/reports" element={<div>Reports</div>} />
+        <Route path="/settings" element={<div>Settings</div>} /> */}
+
+
+        <Route path="/invoices" element={<NotYetDesigned />} />
+        <Route path="/timesheets" element={<NotYetDesigned />} />
+        <Route path="/online-booking" element={<NotYetDesigned />} />
+        <Route path="/reports" element={<NotYetDesigned />} />
+        <Route path="/settings" element={<NotYetDesigned />} />
+      </Route>
+
+      {/* Redirects */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+      <Route path="/register" element={<Navigate to="/auth/register" replace />} />
+
+      {/* 404 Route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <BrowserRouter>
+      <ErrorBoundary>
+        <AppContent />
+      </ErrorBoundary>
+    </BrowserRouter>
+  );
+}
+
+export default App;

@@ -1,0 +1,240 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+ *{
+    font-family: "Poppins", sans-serif;
+    font-size: 1rem;
+ }
+
+.poppins-thin {
+    font-family: "Poppins", sans-serif;
+    font-weight: 100;
+    font-style: normal;
+  }
+  
+  .poppins-extralight {
+    font-family: "Poppins", sans-serif;
+    font-weight: 200;
+    font-style: normal;
+  }
+  
+  .poppins-light {
+    font-family: "Poppins", sans-serif;
+    font-weight: 300;
+    font-style: normal;
+  }
+  
+  .poppins-regular {
+    font-family: "Poppins", sans-serif;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+  .poppins-medium {
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
+    font-style: normal;
+  }
+  
+  .poppins-semibold {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    font-style: normal;
+  }
+  
+  .poppins-bold {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-style: normal;
+  }
+  
+  .poppins-extrabold {
+    font-family: "Poppins", sans-serif;
+    font-weight: 800;
+    font-style: normal;
+  }
+  
+  .poppins-black {
+    font-family: "Poppins", sans-serif;
+    font-weight: 900;
+    font-style: normal;
+  }
+  
+  .poppins-thin-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 100;
+    font-style: italic;
+  }
+  
+  .poppins-extralight-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 200;
+    font-style: italic;
+  }
+  
+  .poppins-light-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 300;
+    font-style: italic;
+  }
+  
+  .poppins-regular-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 400;
+    font-style: italic;
+  }
+  
+  .poppins-medium-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 500;
+    font-style: italic;
+  }
+  
+  .poppins-semibold-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    font-style: italic;
+  }
+  
+  .poppins-bold-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-style: italic;
+  }
+  
+  .poppins-extrabold-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 800;
+    font-style: italic;
+  }
+  
+  .poppins-black-italic {
+    font-family: "Poppins", sans-serif;
+    font-weight: 900;
+    font-style: italic;
+  }
+
+
+  .zen-kaku-gothic-antique-regular {
+    font-family: "Zen Kaku Gothic Antique", sans-serif !important;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+    /* You can add this to your global CSS if needed */
+/* input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+input[type="date"]::-moz-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+} */
+
+  
+/* <------- For PDF Preview -------> */
+
+/* Print media query */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Tooltip styles */
+.tooltip {
+  position: absolute;
+  bottom: -1.75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 40;
+}
+
+.icon-btn:hover .tooltip {
+  opacity: 1;
+}
+
+.icon-btn {
+  position: relative;
+  z-index: 30;
+}
+
+/* Override for PDF viewer loader */
+.rpv-core__loader {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 10;
+}
+
+/* <------- Ends here (PDF Preview) -------> */
+
+/* Styles for Action Button */
+.dot {
+  width: 10px;
+  height: 10px;
+  background-color: white;
+  border-radius: 9999px;
+  display: inline-block;
+}
+
+
+.delay-200 {
+  animation-delay: 0.2s;
+}
+
+.delay-400 {
+  animation-delay: 0.4s;
+}
+
+
+
+/* Custom Scrollbar Styling for .scrollbar-enhanced */
+
+/* Custom Scrollbar Styling for .scrollbar-enhanced */
+
+/* Style the entire scrollbar */
+.scrollbar-enhanced::-webkit-scrollbar {
+  width: 6px; /* Thin scrollbar */
+}
+
+/* Style the track (background behind the thumb) */
+.scrollbar-enhanced::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05); /* Light gray background for white contrast */
+  border-radius: 4px;
+}
+
+/* Style the draggable thumb */
+.scrollbar-enhanced::-webkit-scrollbar-thumb {
+  background: rgba(100, 100, 100, 0.5); /* Medium gray thumb */
+  border-radius: 4px;
+}
+
+/* Thumb on hover */
+.scrollbar-enhanced::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 100, 100, 0.8); /* Darker gray on hover */
+}
+
+.section-transition {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Add smooth transitions for the progress circle */
+circle {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* Smooth number transitions */
+.animate-count {
+  transition: all 0.8s cubic-bezier(0.65, 0, 0.35, 1);
+}
