@@ -5,6 +5,7 @@ import QuotesTable from '../components/QuoteTable/QuotesTable';
 import PageHeader from '../../../components/common/PageHeader';
 import CustomButton from '../../../components/common/CustomButton';
 import HeaderSearch from '../../../components/common/HeaderSearch';
+import TableSkeleton from '../../../components/common/Loader/TableSkeleton'; // Import the skeleton
 import { Plus } from 'lucide-react';
 import { useQuotes } from '../hooks/useQuotes';
 
@@ -25,7 +26,7 @@ const QuoteList = () => {
         deleteQuote,
         refresh,
         clearError
-    } = useQuotes({ limit: 10, autoFetch: true });
+    } = useQuotes({ limit: 5, autoFetch: true });
 
     // Handle error display
     useEffect(() => {
@@ -59,32 +60,18 @@ const QuoteList = () => {
     };
 
     const handleRowsPerPageChange = (event) => {
-        // You'll need to add this to your hook if you want to change rows per page
         const newLimit = parseInt(event.target.value, 10);
-        // This would require extending your hook to support changing limit
         console.log('Change rows per page to:', newLimit);
     };
 
     // Transform pagination to match table expectations
     const tablePagination = {
-        page: pagination.currentPage - 1, // Convert to 0-based for table
+        page: pagination.currentPage - 1,
         rowsPerPage: pagination.perPage,
         total: pagination.totalItems,
         onPageChange: handlePageChange,
         onRowsPerPageChange: handleRowsPerPageChange
     };
-
-    // Simple loading indicator
-    if (loading && quotes.length === 0) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
-                    <p className="mt-2 text-gray-600">Loading quotes...</p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="min-h-full bg-gray-50">
@@ -139,19 +126,26 @@ const QuoteList = () => {
                 </div>
             )}
 
-            {/* FIXED: Removed p-4 to match client list */}
             <div className="bg-white rounded-lg mt-6">
-                <QuotesTable
-                    data={quotes}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onSelect={setSelectedQuotes}
-                    selectedQuotes={selectedQuotes}
-                    pagination={tablePagination}
-                    onSort={handleSort}
-                    sortField={filters.sortField}
-                    sortDirection={filters.sortDirection}
-                />
+                {loading && quotes.length === 0 ? (
+                    <TableSkeleton
+                        rows={6}
+                        columns={7}
+                        hasCheckbox={true}
+                    />
+                ) : (
+                    <QuotesTable
+                        data={quotes}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onSelect={setSelectedQuotes}
+                        selectedQuotes={selectedQuotes}
+                        pagination={tablePagination}
+                        onSort={handleSort}
+                        sortField={filters.sortField}
+                        sortDirection={filters.sortDirection}
+                    />
+                )}
             </div>
         </div>
     );

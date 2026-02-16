@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
 import ClientTable from '../components/ClientTable/ClientTable';
 import PageHeader from '../../../components/common/PageHeader';
-import Loader from '../../../components/common/Loader/Loader';
+import TableSkeleton from '../../../components/common/Loader/TableSkeleton'; // Import the skeleton
 import ErrorAlert from '../../../components/feedback/ErrorAlert';
 import HeaderSearch from '../../../components/common/HeaderSearch';
 import CustomButton from '../../../components/common/CustomButton';
@@ -123,10 +123,14 @@ const ClientList = () => {
 
             <div className="bg-white rounded-lg mt-6">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-12">
-                        <Loader size="lg" />
-                        <p className="mt-4 text-gray-600">Loading customers...</p>
-                    </div>
+                    <TableSkeleton
+                        rows={6}
+                        columns={6}
+                        hasCheckbox={true}
+                        hasAvatar={true}
+                        hasStatus={true}
+                        hasCategory={true}
+                    />
                 ) : (
                     <ClientTable
                         clients={clients}
