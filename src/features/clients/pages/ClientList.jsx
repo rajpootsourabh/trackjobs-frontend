@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
 import ClientTable from '../components/ClientTable/ClientTable';
 import PageHeader from '../../../components/common/PageHeader';
-import TableSkeleton from '../../../components/common/Loader/TableSkeleton'; // Import the skeleton
+import TableSkeleton from '../../../components/common/Loader/TableSkeleton';
 import ErrorAlert from '../../../components/feedback/ErrorAlert';
 import HeaderSearch from '../../../components/common/HeaderSearch';
 import CustomButton from '../../../components/common/CustomButton';
 import { Add } from '@mui/icons-material';
+import { Box, Button } from '@mui/material';
+import { FileTextIcon } from 'lucide-react';
 
 const ClientList = () => {
     const navigate = useNavigate();
@@ -23,7 +25,7 @@ const ClientList = () => {
         loading,
         error,
         pagination,
-        filters,
+        // filters,
         handleSearch,
         handlePageChange: changePage,
         refresh,
@@ -82,6 +84,32 @@ const ClientList = () => {
         }
     };
 
+    // Handle create quote for selected client
+    const handleCreateQuote = () => {
+        if (selectedClients.length === 1) {
+            // Find the selected client
+            const selectedClient = clients.find(client => client.id === selectedClients[0]);
+
+            if (selectedClient) {
+                // Navigate to quote creation with client data
+                navigate('/quotes/new', {
+                    state: {
+                        selectedClient: {
+                            id: selectedClient.id,
+                            name: selectedClient.client_type === 'commercial'
+                                ? selectedClient.business_name
+                                : `${selectedClient.first_name || ''} ${selectedClient.last_name || ''}`.trim(),
+                            email: selectedClient.email
+                        }
+                    }
+                });
+            }
+        } else if (selectedClients.length > 1) {
+            // Handle multiple clients - maybe show a warning or create quotes for each?
+            alert('Please select only one client to create a quote.');
+        }
+    };
+
     // Update selectAll when clients change
     useEffect(() => {
         if (clients.length > 0 && selectedClients.length === clients.length) {
@@ -91,6 +119,7 @@ const ClientList = () => {
         }
     }, [clients, selectedClients]);
 
+
     return (
         <div className="min-h-full bg-gray-50">
             <PageHeader
@@ -99,16 +128,26 @@ const ClientList = () => {
                     { label: 'Customers', current: true }
                 ]}
                 title="Customers"
-                subtitle="View all your customers, manage their details, and keep track of your interactions."
+                subtitle="Manage customers, details, and interactions in one place."
                 actions={
-                    <>
+                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         <HeaderSearch
                             value={searchTerm}
                             onChange={handleSearchChange}
                             placeholder="Search customers..."
                         />
+                        <CustomButton label="Create Quote"
+                            onClick={handleCreateQuote}
+                            icon={FileTextIcon}
+                            disabled={selectedClients.length != 1}
+                            iconProps={{ size: 18 }}
+                            sx={{
+                                textTransform: 'none',
+
+                            }}
+                        />
                         <CustomButton label="New Customer" to="/customers/new" icon={Add} />
-                    </>
+                    </Box>
                 }
             />
 

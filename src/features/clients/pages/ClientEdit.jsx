@@ -4,8 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
 import { useToast } from '../../../components/common/ToastProvider';
 import PageHeader from '../../../components/common/PageHeader';
-import NewClientForm from '../components/ClientForm/NewClientForm';
 import Loader from '../../../components/common/Loader/Loader';
+import ClientForm from '../components/ClientForm/ClientForm';
 
 const ClientEdit = () => {
   const { id } = useParams();
@@ -80,7 +80,7 @@ const ClientEdit = () => {
           { label: 'Edit Customer', current: true }
         ]}
       />
-      <NewClientForm
+      <ClientForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         initialData={currentClient}

@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useClients } from '../hooks/useClients';
 import { useToast } from '../../../components/common/ToastProvider';
 import PageHeader from '../../../components/common/PageHeader';
-import NewClientForm from '../components/ClientForm/NewClientForm';
+import ClientForm from '../components/ClientForm/ClientForm';
 
 const ClientCreate = () => {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ const ClientCreate = () => {
           { label: 'New Customer', current: true }
         ]}
       />
-      <NewClientForm
+      <ClientForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         onSaveAndCreateQuote={handleSaveAndCreateQuote}

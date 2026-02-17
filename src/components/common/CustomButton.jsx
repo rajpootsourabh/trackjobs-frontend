@@ -5,6 +5,7 @@ import { Link as RouterLink } from 'react-router-dom';
 const CustomButton = ({
   label = 'Button',
   icon: Icon,
+  iconProps = {},
   onClick,
   to,
   loading = false,
@@ -18,7 +19,7 @@ const CustomButton = ({
     <Button
       variant={variant}
       size={size}
-      startIcon={!loading && Icon ? <Icon /> : null}
+      startIcon={!loading && Icon ? <Icon {...iconProps} /> : null}
       onClick={onClick}
       component={to ? RouterLink : 'button'}
       to={to}

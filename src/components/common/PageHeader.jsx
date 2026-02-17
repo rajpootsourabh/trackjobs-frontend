@@ -1,7 +1,6 @@
+// components/common/PageHeader.jsx
 import { Link as RouterLink } from 'react-router-dom';
 import { Link } from '@mui/material';
-
-
 import {
   Box,
   Typography,
@@ -34,6 +33,7 @@ const PageHeader = ({
           {breadcrumb.map((item, index) =>
             item.path ? (
               <Link
+                key={index}
                 component={RouterLink}
                 to={item.path}
                 underline="none"
@@ -44,13 +44,11 @@ const PageHeader = ({
                   cursor: 'pointer',
                   '&:hover': {
                     color: 'grey.800'
-                    // textDecoration: 'underline'
                   }
                 }}
               >
                 {item.label}
               </Link>
-
             ) : (
               <Typography
                 key={index}
@@ -65,33 +63,18 @@ const PageHeader = ({
         </Breadcrumbs>
       )}
 
-      {/* Title + Actions */}
+      {/* Title + Actions - Always in same row */}
       <Box
         display="flex"
         alignItems="center"
         justifyContent="space-between"
         flexWrap="wrap"
         gap={2}
+        sx={{ mb: subtitle ? 0.5 : 0 }}
       >
-        <Box>
-          {title && (
-            <Typography variant="h5"
-              sx={{ mt: 1 }}
-              fontWeight={600}>
-              {title}
-            </Typography>
-          )}
-
-          {subtitle && (
-            <Typography
-              variant="body2"
-              color="text.secondary"
-              sx={{ mt: 0.5 }}
-            >
-              {subtitle}
-            </Typography>
-          )}
-        </Box>
+        <Typography variant="h5" fontWeight={600}>
+          {title}
+        </Typography>
 
         {actions && (
           <Box display="flex" alignItems="center" gap={1.5}>
@@ -99,6 +82,17 @@ const PageHeader = ({
           </Box>
         )}
       </Box>
+
+      {/* Subtitle - Always below title */}
+      {subtitle && (
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={{ mt: 0.5 }}
+        >
+          {subtitle}
+        </Typography>
+      )}
     </Paper>
   );
 };

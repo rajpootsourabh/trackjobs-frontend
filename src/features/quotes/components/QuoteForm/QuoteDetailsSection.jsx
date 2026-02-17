@@ -35,6 +35,10 @@ const getClientDisplayName = (client) => {
 
 const QuoteDetailsSection = ({ formik, clients = [], loadingClients = false }) => {
   const [selectedClient, setSelectedClient] = useState(formik.values.client_id || '');
+  
+  // Check if we have a pre-selected client and it exists in the clients list
+  const hasPreSelectedClient = formik.values.client_id && 
+    clients.some(client => client.id === formik.values.client_id);
 
   const handleClientChange = (event) => {
     const clientId = event.target.value;
@@ -61,6 +65,10 @@ const QuoteDetailsSection = ({ formik, clients = [], loadingClients = false }) =
       setSelectedClient(formik.values.client_id);
     }
   }, [formik.values.client_id]);
+
+  // Determine if select should be disabled
+  // Only disable if loading AND we don't have the pre-selected client yet
+  const shouldDisableSelect = loadingClients && !hasPreSelectedClient;
 
   return (
     <Paper
@@ -119,8 +127,19 @@ const QuoteDetailsSection = ({ formik, clients = [], loadingClients = false }) =
               label="Select Client"
               onChange={handleClientChange}
               onBlur={() => formik.setFieldTouched('client_id', true)}
-              disabled={loadingClients}
+              disabled={shouldDisableSelect}
               renderValue={(selected) => {
+                if (loadingClients && !hasPreSelectedClient) {
+                  return (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CircularProgress size={16} sx={{ color: '#3574BB' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        Loading clients...
+                      </Typography>
+                    </Box>
+                  );
+                }
+                
                 if (!selected) return <em>Select a client</em>;
                 const client = clients.find(c => c.id === selected);
                 if (!client) return <em>Select a client</em>;
@@ -165,10 +184,10 @@ const QuoteDetailsSection = ({ formik, clients = [], loadingClients = false }) =
                 );
               }}
             >
-              {loadingClients ? (
+              {loadingClients && !hasPreSelectedClient ? (
                 <MenuItem disabled>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CircularProgress size={20} />
+                    <CircularProgress size={20} sx={{ color: '#3574BB' }} />
                     <Typography variant="body2">Loading clients...</Typography>
                   </Box>
                 </MenuItem>

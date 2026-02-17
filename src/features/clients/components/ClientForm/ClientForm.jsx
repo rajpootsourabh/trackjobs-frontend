@@ -10,7 +10,7 @@ import FormActions from './FormActions';
 import { clientValidationSchema } from '../../schemas/clientValidationSchemas';
 import { INITIAL_CLIENT_VALUES } from '../../constants/clientConstants';
 
-const NewClientForm = ({
+const ClientForm = ({
   onSubmit,
   onCancel,
   onSaveAndCreateQuote,
@@ -153,4 +153,4 @@ const NewClientForm = ({
   );
 };
 
-export default NewClientForm;
+export default ClientForm;
