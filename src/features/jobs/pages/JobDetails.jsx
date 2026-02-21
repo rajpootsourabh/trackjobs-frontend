@@ -20,10 +20,10 @@ const JobDetails = () => {
     const [jobData, setJobData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    
+
     // Use ref to track if component is mounted
     const isMounted = useRef(true);
-    
+
     // Use ref to prevent duplicate fetches
     const fetchedRef = useRef(false);
 
@@ -31,11 +31,11 @@ const JobDetails = () => {
     const fetchJobDetails = useCallback(async () => {
         // Prevent duplicate fetches
         if (fetchedRef.current) return;
-        
+
         try {
             setLoading(true);
             const response = await jobService.getJobById(id);
-            
+
             if (isMounted.current) {
                 setJobData(response.data.data);
                 fetchedRef.current = true;
@@ -56,7 +56,7 @@ const JobDetails = () => {
         // Set mounted flag
         isMounted.current = true;
         fetchedRef.current = false; // Reset when id changes
-        
+
         fetchJobDetails();
 
         // Cleanup
@@ -114,15 +114,15 @@ const JobDetails = () => {
         try {
             const response = await jobService.toggleTask(id, taskId);
             const updatedTask = response.data.data;
-            
+
             setJobData(prev => ({
                 ...prev,
-                tasks: prev.tasks.map(task => 
+                tasks: prev.tasks.map(task =>
                     task.id === taskId ? updatedTask : task
                 ),
                 stats: {
                     ...prev.stats,
-                    completed_tasks: prev.tasks.filter(t => 
+                    completed_tasks: prev.tasks.filter(t =>
                         t.id === taskId ? updatedTask.completed : t.completed
                     ).length,
                 }
@@ -142,8 +142,8 @@ const JobDetails = () => {
                 stats: {
                     ...prev.stats,
                     total_tasks: prev.stats.total_tasks - 1,
-                    pending_tasks: prev.tasks.find(t => t.id === taskId)?.completed 
-                        ? prev.stats.pending_tasks 
+                    pending_tasks: prev.tasks.find(t => t.id === taskId)?.completed
+                        ? prev.stats.pending_tasks
                         : prev.stats.pending_tasks - 1,
                 }
             }));
@@ -154,17 +154,27 @@ const JobDetails = () => {
         }
     }, [id, showToast]);
 
-    const handleAddAttachment = useCallback(async (file) => {
+    // Attachment handlers with context
+    const handleAddGeneralAttachment = useCallback(async (file) => {
         try {
-            const response = await jobService.addAttachment(id, file, file.name);
+            const response = await jobService.addAttachment(
+                id,
+                file,
+                file.name,
+                { context: 'general' }
+            );
             const newAttachment = response.data.data;
-            
+
             setJobData(prev => ({
                 ...prev,
-                attachments: [...(prev.attachments || []), newAttachment],
+                attachments_by_context: {
+                    ...prev.attachments_by_context,
+                    general: [...(prev.attachments_by_context?.general || []), newAttachment]
+                },
                 stats: {
                     ...prev.stats,
                     total_attachments: (prev.stats?.total_attachments || 0) + 1,
+                    general_attachments: (prev.stats?.general_attachments || 0) + 1,
                 }
             }));
             showToast('File uploaded successfully', 'success');
@@ -174,17 +184,65 @@ const JobDetails = () => {
         }
     }, [id, showToast]);
 
+    // Handler for instruction attachments (called from InstructionsSection)
+    const handleAddInstructionAttachment = useCallback(async (file) => {
+        try {
+            const response = await jobService.addAttachment(
+                id,
+                file,
+                file.name,
+                { context: 'instructions' }
+            );
+            const newAttachment = response.data.data;
+
+            setJobData(prev => ({
+                ...prev,
+                attachments_by_context: {
+                    ...prev.attachments_by_context,
+                    instructions: [...(prev.attachments_by_context?.instructions || []), newAttachment]
+                },
+                stats: {
+                    ...prev.stats,
+                    total_attachments: (prev.stats?.total_attachments || 0) + 1,
+                    instruction_attachments: (prev.stats?.instruction_attachments || 0) + 1,
+                }
+            }));
+            showToast('File uploaded successfully', 'success');
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            showToast('Failed to upload file', 'error');
+        }
+    }, [id, showToast]);
+
+    // Unified delete handler that works for both contexts
     const handleDeleteAttachment = useCallback(async (attachmentId) => {
         try {
             await jobService.deleteAttachment(id, attachmentId);
-            setJobData(prev => ({
-                ...prev,
-                attachments: prev.attachments.filter(att => att.id !== attachmentId),
-                stats: {
-                    ...prev.stats,
-                    total_attachments: prev.stats.total_attachments - 1,
-                }
-            }));
+            
+            setJobData(prev => {
+                // Check which context the attachment belongs to
+                const inGeneral = prev.attachments_by_context?.general?.some(att => att.id === attachmentId);
+                const inInstructions = prev.attachments_by_context?.instructions?.some(att => att.id === attachmentId);
+                
+                return {
+                    ...prev,
+                    attachments_by_context: {
+                        general: prev.attachments_by_context?.general?.filter(att => att.id !== attachmentId) || [],
+                        instructions: prev.attachments_by_context?.instructions?.filter(att => att.id !== attachmentId) || [],
+                    },
+                    stats: {
+                        ...prev.stats,
+                        total_attachments: (prev.stats?.total_attachments || 0) - 1,
+                        general_attachments: inGeneral 
+                            ? (prev.stats?.general_attachments || 0) - 1 
+                            : (prev.stats?.general_attachments || 0),
+                        instruction_attachments: inInstructions 
+                            ? (prev.stats?.instruction_attachments || 0) - 1 
+                            : (prev.stats?.instruction_attachments || 0),
+                    }
+                };
+            });
+            
             showToast('Attachment deleted successfully', 'success');
         } catch (error) {
             console.error('Error deleting attachment:', error);
@@ -241,7 +299,6 @@ const JobDetails = () => {
         <>
             <PageHeader
                 title={jobData.title}
-                // subtitle={`Job ID: ${jobData.job_number}`}
                 breadcrumb={[
                     { label: 'Dashboard', path: '/dashboard' },
                     { label: 'Jobs', path: '/jobs' },
@@ -268,7 +325,11 @@ const JobDetails = () => {
                     <InstructionsSection
                         instructions={jobData.instructions}
                         notes={jobData.notes}
-                        onAttachFiles={() => document.getElementById('file-upload').click()}
+                        attachments={jobData.attachments_by_context?.instructions || []} // Pass only instruction attachments
+                        onAddAttachment={handleAddInstructionAttachment}
+                        onDeleteAttachment={handleDeleteAttachment}
+                        onDownload={handleDownloadAttachment}
+                        jobId={id}
                     />
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -288,8 +349,8 @@ const JobDetails = () => {
                 </Grid>
                 <Grid item xs={12} md={6}>
                     <AttachmentsSection
-                        attachments={jobData.attachments || []}
-                        onAddAttachment={() => document.getElementById('file-upload').click()}
+                        attachments={jobData.attachments_by_context?.general || []} // Pass only general attachments
+                        onAddAttachment={() => document.getElementById('general-file-upload').click()}
                         onDownload={handleDownloadAttachment}
                         onPreview={handlePreviewAttachment}
                         onDelete={handleDeleteAttachment}
@@ -297,14 +358,18 @@ const JobDetails = () => {
                 </Grid>
             </Grid>
 
-            {/* Hidden file input */}
+            {/* Hidden file inputs */}
             <input
                 type="file"
-                id="file-upload"
+                id="general-file-upload"
                 style={{ display: 'none' }}
+                multiple
                 onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                        handleAddAttachment(e.target.files[0]);
+                    if (e.target.files?.length > 0) {
+                        // Handle multiple files
+                        Array.from(e.target.files).forEach(file => {
+                            handleAddGeneralAttachment(file);
+                        });
                     }
                 }}
             />

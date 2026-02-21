@@ -1,7 +1,7 @@
 // src/features/jobs/components/JobView/JobDetailsSection.jsx
 import React from 'react';
 import { Grid, Paper, Typography, Box, Chip, Button } from '@mui/material';
-import { Business, Edit, Check, Schedule } from '@mui/icons-material';
+import { Business, Edit, Check, Schedule, Person, Description } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import SectionHeader from '../../../../components/common/form/SectionHeader';
 
@@ -9,18 +9,33 @@ const JobDetailsSection = ({ jobData }) => {
     const navigate = useNavigate();
 
     // Safely access nested properties with fallbacks
-    const clientName = jobData?.client?.business_name ||
-        (jobData?.client?.first_name && jobData?.client?.last_name
-            ? `${jobData.client.first_name} ${jobData.client.last_name}`
-            : 'N/A');
+    const clientName = jobData?.client?.name || 'N/A';
+    const clientType = jobData?.client?.client_type || 'N/A';
+    const clientCategory = jobData?.client?.category || 'N/A';
 
-    const clientId = jobData?.client?.id || 'N/A';
+    // Format client type for display
+    const formattedClientType = clientType === 'commercial' ? 'Commercial' :
+        clientType === 'residential' ? 'Residential' : clientType;
+
+    // Get quote number
+    const quoteNumber = jobData?.quote?.quote_number || null;
+    const quoteId = jobData?.quote?.id || jobData?.quote_id;
 
     // Format currency safely
     const totalAmount = jobData?.total_amount || 0;
     const formattedTotal = jobData?.currency
         ? `${jobData.currency} ${totalAmount.toFixed(2)}`
         : `$${totalAmount.toFixed(2)}`;
+
+    // Helper to get client type chip color
+    const getClientTypeColor = (type) => {
+        switch (type?.toLowerCase()) {
+            case 'commercial': return 'primary';
+            case 'residential': return 'warning';
+            default: return 'default';
+        }
+    };
+
 
     return (
         <Paper sx={{ p: 3, mb: 3, borderRadius: 2 }}>
@@ -45,17 +60,35 @@ const JobDetailsSection = ({ jobData }) => {
             </Box>
 
             <Grid container spacing={1}>
-                {/* Client - Full Width */}
+                {/* Client - Full Width with Type and Category Chips */}
                 <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        flexWrap: 'wrap',
+                        mb: 0.5
+                    }}>
                         <Typography variant="subtitle2" color="text.secondary">
                             Client:
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Business fontSize="small" color="primary" />
-                            <Typography variant="body1">{clientName}</Typography>
-
+                            <Typography variant="body1" fontWeight={500}>{clientName}</Typography>
                         </Box>
+                        <Chip
+                            label={formattedClientType}
+                            size="small"
+                            color={getClientTypeColor(clientType)}
+                            variant="outlined"
+                            sx={{
+                                height: 20,
+                                '& .MuiChip-label': {
+                                    fontSize: '0.65rem',
+                                    px: 0.8,
+                                    fontWeight: 500,
+                                },
+                            }}
+                        />
                     </Box>
                 </Grid>
 
@@ -133,7 +166,6 @@ const JobDetailsSection = ({ jobData }) => {
                                     ? jobData.work_type.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())
                                     : 'N/A'}
                             </Typography>
-
                         </Box>
                     </Box>
                 </Grid>
@@ -176,35 +208,7 @@ const JobDetailsSection = ({ jobData }) => {
                     </Box>
                 </Grid>
 
-                {/* Row 3 */}
-                {jobData?.quote_id && (
-                    <Grid item xs={12} md={4}>
-                        <Box sx={{
-                            display: 'flex',
-                            justifyContent: 'flex-start',
-                            height: '26px',
-                            alignItems: 'center'
-                        }}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography variant="subtitle2" color="text.secondary">
-                                    Created from:
-                                </Typography>
-                                <Chip
-                                    label={`Quote #${jobData.quote_id}`}
-                                    size="small"
-                                    onClick={() => navigate(`/quotes/${jobData.quote_id}`)}
-                                    sx={{
-                                        cursor: 'pointer',
-                                        '& .MuiChip-label': {
-                                            fontSize: '0.8rem',
-                                        },
-                                    }}
-                                />
-                            </Box>
-                        </Box>
-                    </Grid>
-                )}
-
+                {/* Row 3 - Priority and Dates */}
                 <Grid item xs={12} md={4}>
                     <Box sx={{
                         display: 'flex',
@@ -214,21 +218,96 @@ const JobDetailsSection = ({ jobData }) => {
                     }}>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                Priority:
+                                Created from:
                             </Typography>
                             <Chip
-                                label={jobData?.priority || 'N/A'}
-                                size="small"
-                                color={
-                                    jobData?.priority === 'high' ? 'error' :
-                                        jobData?.priority === 'medium' ? 'warning' :
-                                            jobData?.priority === 'low' ? 'success' : 'default'
+                                icon={
+                                    <Description
+                                        sx={{
+                                            fontSize: 16,
+                                        }}
+                                    />
                                 }
+                                label={`Quote #${quoteNumber}`}
+                                size="small"
+                                onClick={() => navigate(`/quotes/${quoteId}/edit`)}
+                                sx={{
+                                    cursor: 'pointer',
+                                    px: 0.5,
+                                    borderRadius: 2,
+                                    bgcolor: 'primary.50',
+                                    // color: 'primary.main',
+                                    fontWeight: 600,
+                                    transition: 'all 0.2s ease',
+
+                                    '& .MuiChip-label': {
+                                        fontSize: '0.75rem',
+                                        px: 0.5,
+                                        ml: 0.4
+                                    },
+
+                                    '& .MuiChip-icon': {
+                                        color: 'primary.main',
+                                        ml: 0.5,
+                                        fontSize: 15
+                                    }
+                                }}
+                            />
+                        </Box>
+                    </Box>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        height: '26px',
+                        alignItems: 'center'
+                    }}>
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            width: '200px',
+                            justifyContent: 'flex-start'
+                        }}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Est. Completion:
+                            </Typography>
+                            <Typography variant="body1">
+                                {jobData?.estimated_completion_date || 'Not set'}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Grid>
+
+                <Grid item xs={12} md={4}>
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        height: '26px',
+                        alignItems: 'center'
+                    }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Typography variant="subtitle2" color="text.secondary">
+                                Status:
+                            </Typography>
+                            <Chip
+                                label={jobData?.status?.replace('_', ' ') || 'N/A'}
+                                size="small"
+                                // color={
+                                //     jobData?.status === 'completed' ? 'success' :
+                                //         jobData?.status === 'in_progress' ? 'info' :
+                                //             jobData?.status === 'pending' ? 'secondary' :
+                                //                 jobData?.status === 'cancelled' ? 'error' : 'default'
+                                // }
                                 sx={{
                                     height: 20,
                                     '& .MuiChip-label': {
                                         fontSize: '0.65rem',
                                         px: 0.8,
+                                        fontWeight: 500,
+                                        textTransform: 'capitalize',
                                     },
                                 }}
                             />

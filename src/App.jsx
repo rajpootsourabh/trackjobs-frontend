@@ -33,6 +33,7 @@ import Dashboard from './features/dashboard/Dashboard';
 import NotYetDesigned from './pages/NotYetDesigned';
 import JobDetails from './features/jobs/pages/JobDetails';
 import OnlineBooking from './features/bookings/pages/OnlineBooking';
+import JobList from './features/jobs/pages/JobList';
 
 const AppContent = () => {
   const { loadAuthState, user } = useAuth();
@@ -68,6 +69,7 @@ const AppContent = () => {
         <Route path="/quotes/:id/edit" element={<QuoteEdit />} />
 
         {/* Future Modules with RESTful naming */}
+         <Route path="/jobs" element={<JobList />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         {/* <Route path="/jobs/new" element={<div>Create Job</div>} />
         <Route path="/jobs/:id" element={<div>Job Details</div>} />

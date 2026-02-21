@@ -57,17 +57,12 @@ const getFileIcon = (fileType, fileName) => {
     return <AttachFile color="action" />;
 };
 
-// Helper function to format file size
-const formatFileSize = (bytes) => {
-    if (!bytes) return '';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-};
-
 const InstructionsSection = ({
     instructions: initialInstructions = '',
+    attachments: initialAttachments = [],
+    onAddAttachment,
+    onDeleteAttachment,
+    onDownload,
     onUpdate,
     jobId: propJobId
 }) => {
@@ -77,7 +72,7 @@ const InstructionsSection = ({
     const { showToast } = useToast();
     const textRef = useRef(null);
     const [isTruncated, setIsTruncated] = useState(false);
-    
+
     // State for edit dialog
     const [editDialogOpen, setEditDialogOpen] = useState(false);
 
@@ -87,8 +82,8 @@ const InstructionsSection = ({
     const [updating, setUpdating] = useState(false);
     const [isHovering, setIsHovering] = useState(false);
 
-    // State for attachments
-    const [attachments, setAttachments] = useState([]);
+    // State for attachments - use initialAttachments from props
+    const [attachments, setAttachments] = useState(initialAttachments);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
@@ -99,40 +94,21 @@ const InstructionsSection = ({
         setInstructions(initialInstructions);
     }, [initialInstructions]);
 
+    // Update attachments when props change
+    useEffect(() => {
+        setAttachments(initialAttachments);
+    }, [initialAttachments]);
+
     // Check if text needs truncation
     useEffect(() => {
         if (textRef.current && instructions) {
             const lineHeight = parseInt(getComputedStyle(textRef.current).lineHeight);
             const maxHeight = lineHeight * 3; // 3 lines
             setIsTruncated(textRef.current.scrollHeight > maxHeight);
+        } else {
+            setIsTruncated(false); // Reset if no instructions
         }
     }, [instructions]);
-
-    // Fetch attachments when component mounts
-    useEffect(() => {
-        if (currentJobId) {
-            fetchAttachments();
-        }
-    }, [currentJobId]);
-
-    const fetchAttachments = async () => {
-        if (!currentJobId) return;
-
-        try {
-            setLoading(true);
-            const response = await jobService.getJobById(currentJobId);
-            // Sort attachments by created_at in descending order and take latest 8
-            const allAttachments = response.data.data.attachments || [];
-            const sortedAttachments = [...allAttachments].sort((a, b) =>
-                new Date(b.created_at) - new Date(a.created_at)
-            ).slice(0, 8);
-            setAttachments(sortedAttachments);
-        } catch (error) {
-            console.error('Error fetching attachments:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
 
     // Handle instructions edit
     const handleEdit = () => {
@@ -174,25 +150,17 @@ const InstructionsSection = ({
 
     const handleFileUpload = async (event) => {
         const files = event.target.files;
-        if (!files || files.length === 0 || !currentJobId) return;
+        if (!files || files.length === 0 || !currentJobId || !onAddAttachment) return;
 
         setUploading(true);
 
         try {
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
-                const response = await jobService.addAttachment(currentJobId, file, file.name);
-                const newAttachment = response.data.data;
-
-                // Add new attachment to the beginning and keep only latest 8
-                setAttachments(prev => {
-                    const updated = [newAttachment, ...prev];
-                    return updated.slice(0, 8);
-                });
-                showToast(`File "${file.name}" uploaded successfully`, 'success');
+                await onAddAttachment(file);
             }
         } catch (error) {
-            console.error('Error uploading file:', error);
+            console.error('❌ Error uploading file:', error);
             showToast('Failed to upload file', 'error');
         } finally {
             setUploading(false);
@@ -201,20 +169,14 @@ const InstructionsSection = ({
     };
 
     const handleRemoveAttachment = async (attachmentId, fileName) => {
-        if (!currentJobId) return;
-
-        try {
-            await jobService.deleteAttachment(currentJobId, attachmentId);
-            setAttachments(prev => prev.filter(a => a.id !== attachmentId));
-            showToast(`File "${fileName}" deleted successfully`, 'success');
-        } catch (error) {
-            console.error('Error deleting attachment:', error);
-            showToast('Failed to delete file', 'error');
-        }
+        if (!currentJobId || !onDeleteAttachment) return;
+        await onDeleteAttachment(attachmentId);
     };
 
     const handleDownload = (url, fileName) => {
-        if (url) {
+        if (url && onDownload) {
+            onDownload({ url, file_name: fileName });
+        } else if (url) {
             window.open(url, '_blank');
         }
     };
@@ -233,7 +195,7 @@ const InstructionsSection = ({
     };
 
     const hasAttachments = attachments.length > 0;
-    const hasInstructions = instructions && instructions.trim().length > 0;
+    const hasInstructions = instructions && String(instructions).trim().length > 0;
 
     return (
         <>
@@ -439,7 +401,7 @@ const InstructionsSection = ({
                     <Box sx={{ flex: 1 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                             <Typography variant="subtitle2" color="text.secondary">
-                                Recent Files ({attachments.length}/8)
+                                Recent Files ({attachments.length})
                             </Typography>
                         </Box>
                         <ImageList
@@ -688,9 +650,9 @@ const InstructionsSection = ({
                     }
                 }}
             >
-                <DialogTitle sx={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
+                <DialogTitle sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
                     borderBottom: '1px solid',
                     borderColor: 'divider',
@@ -708,7 +670,7 @@ const InstructionsSection = ({
                         <TextField
                             autoFocus
                             multiline
-                            rows={12}
+                            rows={8}
                             fullWidth
                             value={tempInstructions}
                             onChange={(e) => setTempInstructions(e.target.value)}
@@ -722,7 +684,7 @@ const InstructionsSection = ({
                                 }
                             }}
                         />
-                        
+
                         {/* Optional attachments section in dialog */}
                         <Box sx={{ mt: 2 }}>
                             <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -748,7 +710,7 @@ const InstructionsSection = ({
                                 onChange={handleFileUpload}
                                 accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
                             />
-                            
+
                             {/* Show current attachments count if any */}
                             {attachments.length > 0 && (
                                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
@@ -766,7 +728,7 @@ const InstructionsSection = ({
                         onClick={handleSave}
                         variant="contained"
                         startIcon={updating ? <CircularProgress size={16} /> : <Save />}
-                        disabled={updating || !tempInstructions.trim()}
+                        disabled={updating || !tempInstructions || !tempInstructions.trim()}
                     >
                         {updating ? 'Saving...' : 'Save Changes'}
                     </Button>
