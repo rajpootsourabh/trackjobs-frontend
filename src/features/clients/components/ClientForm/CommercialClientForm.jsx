@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Grid, Paper, Divider } from '@mui/material';
 import SectionHeader from '../../../../components/common/form/SectionHeader';
 import DebouncedTextField from '../../../../components/common/form/DebouncedTextField';
@@ -17,6 +17,16 @@ import {
 } from '../../constants/clientConstants';
 
 const CommercialClientForm = ({ formik, mode = 'create' }) => {
+  // Add this debug effect
+  useEffect(() => {
+    console.log('📋 CommercialClientForm - Formik State:', {
+      values: formik.values,
+      errors: formik.errors,
+      touched: formik.touched,
+      isSubmitting: formik.isSubmitting,
+      isValid: formik.isValid
+    });
+  }, [formik.values, formik.errors, formik.touched, formik.isSubmitting, formik.isValid]);
   return (
     <>
       {/* Section 1: Basic Business Information */}

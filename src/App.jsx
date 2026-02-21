@@ -31,6 +31,8 @@ import QuoteEdit from './features/quotes/pages/QuoteEdit';
 // Dashboard
 import Dashboard from './features/dashboard/Dashboard';
 import NotYetDesigned from './pages/NotYetDesigned';
+import JobDetails from './features/jobs/pages/JobDetails';
+import OnlineBooking from './features/bookings/pages/OnlineBooking';
 
 const AppContent = () => {
   const { loadAuthState, user } = useAuth();
@@ -66,7 +68,7 @@ const AppContent = () => {
         <Route path="/quotes/:id/edit" element={<QuoteEdit />} />
 
         {/* Future Modules with RESTful naming */}
-        <Route path="/jobs" element={<NotYetDesigned />} />
+        <Route path="/jobs/:id" element={<JobDetails />} />
         {/* <Route path="/jobs/new" element={<div>Create Job</div>} />
         <Route path="/jobs/:id" element={<div>Job Details</div>} />
         <Route path="/jobs/:id/edit" element={<div>Edit Job</div>} /> */}
@@ -79,7 +81,7 @@ const AppContent = () => {
 
         <Route path="/invoices" element={<NotYetDesigned />} />
         <Route path="/timesheets" element={<NotYetDesigned />} />
-        <Route path="/online-booking" element={<NotYetDesigned />} />
+        <Route path="/online-booking" element={<OnlineBooking/>} />
         <Route path="/reports" element={<NotYetDesigned />} />
         <Route path="/settings" element={<NotYetDesigned />} />
       </Route>

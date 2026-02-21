@@ -1,35 +1,36 @@
 // components/common/FileUploader/FileUploader.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, Typography } from '@mui/material';
-import { X, Loader } from 'lucide-react';
+import { X, Loader, CheckCircle, FileText, File } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import { uploadTempFile } from '../../store/slices/fileUploadSlice';
-
+import EllipsisText from './EllipsisText';
 
 const FileUploader = ({
   // Formik integration
   formik,
-  
+
   // Field names (configurable)
   tempIdField = 'logo_temp_id',
   removeField = 'remove_logo',
-  
+
   // File configuration
   accept = 'image/*',
   maxSize = 5 * 1024 * 1024,
   allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
-  
+
   // UI Configuration
   buttonText = 'Upload',
   helperText = '',
-  
+  successMessage = 'File uploaded successfully',
+
   // Existing file data (from API)
   existingFileUrl = null,
   existingFileName = null,
-  
+
   // Mode
   mode = 'create',
-  
+
   // Callbacks
   onUploadStart,
   onUploadSuccess,
@@ -38,61 +39,64 @@ const FileUploader = ({
 }) => {
   const dispatch = useDispatch();
   const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [fileName, setFileName] = useState('');
   const [imageError, setImageError] = useState(false);
   const [localFile, setLocalFile] = useState(null);
-  const [userCleared, setUserCleared] = useState(false); // NEW: Track if user cleared
+  const [userCleared, setUserCleared] = useState(false);
   const prevUrlRef = useRef();
+  const errorTimeoutRef = useRef();
+  const successTimeoutRef = useRef();
 
-  // Debug logs
-  console.log('=== FileUploader Render ===', {
-    mode,
-    existingFileUrl: existingFileUrl ? 'URL exists' : 'null',
-    existingFileName,
-    previewUrl: previewUrl ? 'Preview set' : 'null',
-    fileName,
-    imageError,
-    localFile: localFile ? 'Yes' : 'No',
-    uploading,
-    userCleared
+  // Debug logs (keep your existing logs)
+  console.log('🔍 FileUploader Render - Formik State:', {
+    tempIdField,
+    fieldValue: formik.values[tempIdField],
+    fieldError: formik.errors[tempIdField],
+    fieldTouched: formik.touched[tempIdField],
+    allErrors: formik.errors,
+    allValues: formik.values
   });
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Handle existing file from API
   useEffect(() => {
-    console.log('=== FileUploader Effect ===', {
-      mode,
-      existingFileUrl: existingFileUrl ? 'URL exists' : 'null',
-      previewUrl,
-      fileName,
-      prevUrl: prevUrlRef.current,
-      userCleared
-    });
-
-    // If user cleared, don't reset the preview from existingFileUrl
     if (userCleared) {
-      console.log('User cleared - ignoring existingFileUrl');
       return;
     }
 
-    // Only run if we have an existing file URL and we're in update mode
     if (mode === 'update' && existingFileUrl) {
-      // Check if this is a new URL or if preview is not set
       if (existingFileUrl !== prevUrlRef.current || !previewUrl) {
-        console.log('🎯 SETTING PREVIEW FROM API:', existingFileUrl);
         setPreviewUrl(existingFileUrl);
-        setFileName(existingFileName || 'Existing logo');
+        setFileName(existingFileName || 'Existing file');
         setImageError(false);
         setLocalFile(null);
+        setUploadSuccess(true);
         prevUrlRef.current = existingFileUrl;
+        
+        // Auto-hide success message
+        successTimeoutRef.current = setTimeout(() => {
+          setUploadSuccess(false);
+        }, 3000);
       }
     } else if (mode === 'create' && !uploading && !localFile && !userCleared) {
-      // Reset in create mode if not uploading and no local file
-      console.log('Resetting in create mode');
       setPreviewUrl(null);
       setFileName('');
       setImageError(false);
       setLocalFile(null);
+      setUploadSuccess(false);
     }
   }, [existingFileUrl, existingFileName, mode, uploading, previewUrl, localFile, userCleared]);
 
@@ -100,52 +104,133 @@ const FileUploader = ({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    console.log('File selected:', file.name);
+    // Clear timeouts
+    if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+    if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+
+    setUploadSuccess(false);
+
+    // Check file size
+    if (file.size > maxSize) {
+      const errorMsg = `File size must be under ${Math.round(maxSize / 1024 / 1024)} MB`;
+      
+      event.target.value = '';
+      setPreviewUrl(null);
+      setFileName('');
+      setLocalFile(null);
+      setUserCleared(true);
+
+      formik.setFieldTouched(tempIdField, true, false);
+      formik.setFieldError(tempIdField, errorMsg);
+      formik.setFieldValue(tempIdField, null, false);
+      
+      errorTimeoutRef.current = setTimeout(() => {
+        if (formik.errors[tempIdField] !== errorMsg) {
+          formik.setFieldError(tempIdField, errorMsg);
+        }
+      }, 100);
+      
+      if (mode === 'update' && removeField) {
+        formik.setFieldValue(removeField, true, false);
+      }
+
+      return;
+    }
+
+    // Check file type
+    if (!allowedTypes.includes(file.type)) {
+      const errorMsg = `File type not allowed. Please upload: ${allowedTypes.map(type => type.split('/')[1]).join(', ')}`;
+      
+      event.target.value = '';
+      setPreviewUrl(null);
+      setFileName('');
+      setLocalFile(null);
+      setUserCleared(true);
+
+      formik.setFieldTouched(tempIdField, true, false);
+      formik.setFieldError(tempIdField, errorMsg);
+      formik.setFieldValue(tempIdField, null, false);
+      
+      errorTimeoutRef.current = setTimeout(() => {
+        if (formik.errors[tempIdField] !== errorMsg) {
+          formik.setFieldError(tempIdField, errorMsg);
+        }
+      }, 100);
+      
+      if (mode === 'update' && removeField) {
+        formik.setFieldValue(removeField, true, false);
+      }
+
+      return;
+    }
+
+    // Validation passed
     setUploading(true);
     setFileName(file.name);
     setImageError(false);
     setLocalFile(file);
-    setUserCleared(false); // Reset user cleared flag
+    setUserCleared(false);
+    formik.setFieldError(tempIdField, undefined);
 
-    // Create local preview immediately
+    // Create local preview (works for all file types)
     const localPreviewUrl = URL.createObjectURL(file);
-    console.log('🎯 SETTING LOCAL PREVIEW:', localPreviewUrl);
     setPreviewUrl(localPreviewUrl);
 
-    // Callback
     if (onUploadStart) onUploadStart(file);
 
     try {
-      // Upload to get temp_id
       const resultAction = await dispatch(uploadTempFile(file));
-      
+
       if (uploadTempFile.fulfilled.match(resultAction)) {
         const fileData = resultAction.payload.data;
-        console.log('Upload successful:', fileData);
-        
+
         if (fileData && fileData.temp_id) {
-          // Set temp_id in formik
-          formik.setFieldValue(tempIdField, fileData.temp_id);
-          
-          // If we're in update mode, make sure remove flag is false
+          formik.setFieldError(tempIdField, undefined);
+          formik.setFieldValue(tempIdField, fileData.temp_id, false);
+
           if (mode === 'update' && removeField) {
-            formik.setFieldValue(removeField, false);
+            formik.setFieldValue(removeField, false, false);
           }
-          
-          // Callback
+
+          setUploadSuccess(true);
+          successTimeoutRef.current = setTimeout(() => {
+            setUploadSuccess(false);
+          }, 3000);
+
           if (onUploadSuccess) onUploadSuccess(fileData);
         }
+      } else {
+        const errorMsg = 'File upload failed. Please try again.';
+        formik.setFieldError(tempIdField, errorMsg);
+        
+        errorTimeoutRef.current = setTimeout(() => {
+          if (formik.errors[tempIdField] !== errorMsg) {
+            formik.setFieldError(tempIdField, errorMsg);
+          }
+        }, 100);
+        
+        setPreviewUrl(null);
+        setFileName('');
+        setLocalFile(null);
+        URL.revokeObjectURL(localPreviewUrl);
+
+        if (onUploadError) onUploadError(new Error(errorMsg));
       }
     } catch (error) {
-      console.error('Upload failed:', error);
+      const errorMsg = error.message || 'File upload failed. Please try again.';
+      formik.setFieldError(tempIdField, errorMsg);
       
-      // Clear preview on error
+      errorTimeoutRef.current = setTimeout(() => {
+        if (formik.errors[tempIdField] !== errorMsg) {
+          formik.setFieldError(tempIdField, errorMsg);
+        }
+      }, 100);
+
       setPreviewUrl(null);
       setFileName('');
       setLocalFile(null);
       URL.revokeObjectURL(localPreviewUrl);
-      
-      // Callback
+
       if (onUploadError) onUploadError(error);
     } finally {
       setUploading(false);
@@ -153,9 +238,9 @@ const FileUploader = ({
   };
 
   const handleClear = () => {
-    console.log('Clearing file');
-    
-    // Clean up local preview URL
+    if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
+    if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
+
     if (previewUrl && previewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -164,33 +249,50 @@ const FileUploader = ({
     setFileName('');
     setImageError(false);
     setLocalFile(null);
-    setUserCleared(true); // Set user cleared flag
-    
-    // Handle based on mode
+    setUserCleared(true);
+    setUploadSuccess(false);
+    formik.setFieldError(tempIdField, undefined);
+
     if (mode === 'update' && removeField) {
-      console.log('Setting remove_logo = true for update mode');
-      formik.setFieldValue(removeField, true);
-      formik.setFieldValue(tempIdField, null);
+      formik.setFieldValue(removeField, true, false);
+      formik.setFieldValue(tempIdField, null, false);
     } else {
-      console.log('Clearing temp_id for create mode');
-      formik.setFieldValue(tempIdField, null);
+      formik.setFieldValue(tempIdField, null, false);
     }
-    
-    // Callback
+
     if (onClear) onClear();
   };
 
   const handleImageError = () => {
-    console.error('❌ Image failed to load:', previewUrl);
     setImageError(true);
   };
 
   const handleImageLoad = () => {
-    console.log('✅ Image loaded successfully:', previewUrl);
     setImageError(false);
   };
 
-  // Determine what to display
+  // File icon component
+  const FileIcon = ({ fileName }) => {
+    if (!fileName) return <File size={20} />;
+    
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    
+    switch(ext) {
+      case 'pdf':
+        return <Typography sx={{ color: 'error.main', fontWeight: 'bold', fontSize: '0.75rem' }}>PDF</Typography>;
+      case 'doc':
+      case 'docx':
+        return <Typography sx={{ color: 'primary.main', fontWeight: 'bold', fontSize: '0.75rem' }}>DOC</Typography>;
+      case 'xls':
+      case 'xlsx':
+        return <Typography sx={{ color: 'success.main', fontWeight: 'bold', fontSize: '0.75rem' }}>XLS</Typography>;
+      case 'txt':
+        return <Typography sx={{ color: 'text.secondary', fontWeight: 'bold', fontSize: '0.75rem' }}>TXT</Typography>;
+      default:
+        return <FileText size={20} />;
+    }
+  };
+
   const getDisplayContent = () => {
     if (uploading) {
       return (
@@ -202,39 +304,91 @@ const FileUploader = ({
     }
 
     if (previewUrl && !imageError) {
-      console.log('Rendering image with URL:', previewUrl);
-      return (
-        <>
-          {/* Preview */}
-          <Box
-            component="img"
-            src={previewUrl}
-            alt="Preview"
-            sx={{
-              height: '80%',
-              maxWidth: '80%',
-              objectFit: 'contain'
-            }}
-            onError={handleImageError}
-            onLoad={handleImageLoad}
-          />
-
-          {/* Clear Icon */}
-          <Box
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: '50%',
-              transform: 'translateY(-50%)',
-              cursor: 'pointer',
-              '&:hover': { opacity: 0.7 }
-            }}
-            onClick={handleClear}
-          >
-            <X size={18} />
-          </Box>
-        </>
-      );
+      const isImage = localFile?.type?.startsWith('image/') || 
+                      (fileName && /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(fileName));
+      
+      if (isImage) {
+        // Image preview
+        return (
+          <>
+            <Box
+              component="img"
+              src={previewUrl}
+              alt="Preview"
+              sx={{
+                height: '80%',
+                maxWidth: '80%',
+                objectFit: 'contain'
+              }}
+              onError={handleImageError}
+              onLoad={handleImageLoad}
+            />
+            <Box
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+                '&:hover': { opacity: 0.7 }
+              }}
+              onClick={handleClear}
+            >
+              <X size={18} />
+            </Box>
+          </>
+        );
+      } else {
+        // Non-image file display with preview button
+        return (
+          <>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'space-between',
+              width: '100%',
+              px: 1,
+              gap: 1
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                <FileIcon fileName={fileName} />
+                <EllipsisText 
+                  text={fileName} 
+                  variant="caption"
+                  sx={{ maxWidth: '100px' }}
+                />
+              </Box>
+              <Button
+                size="small"
+                variant="outlined"
+                onClick={() => window.open(previewUrl, '_blank')}
+                sx={{ 
+                  minWidth: 'auto',
+                  py: 0.5,
+                  px: 1,
+                  fontSize: '0.7rem',
+                  textTransform: 'none'
+                }}
+              >
+                Preview
+              </Button>
+            </Box>
+            <Box
+              sx={{
+                position: 'absolute',
+                right: 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                cursor: 'pointer',
+                '&:hover': { opacity: 0.7 }
+              }}
+              onClick={handleClear}
+            >
+              <X size={18} />
+            </Box>
+          </>
+        );
+      }
     }
 
     if (previewUrl && imageError) {
@@ -281,6 +435,26 @@ const FileUploader = ({
     );
   };
 
+  const getHelperText = () => {
+    if (formik.errors[tempIdField]) {
+      return formik.errors[tempIdField];
+    }
+    
+    if (uploadSuccess && fileName) {
+      return successMessage;
+    }
+    
+    if (!fileName) {
+      return helperText;
+    }
+    
+    return '';
+  };
+
+  const helperTextToShow = getHelperText();
+  const hasError = !!formik.errors[tempIdField];
+  const isSuccess = uploadSuccess && !hasError;
+
   return (
     <Box>
       <Box
@@ -293,31 +467,39 @@ const FileUploader = ({
           justifyContent: 'center',
           position: 'relative',
           overflow: 'hidden',
-          bgcolor: uploading ? 'action.hover' : 'transparent'
+          bgcolor: uploading ? 'action.hover' : 'transparent',
+          ...(hasError && {
+            borderColor: 'error.main',
+            borderWidth: 2
+          }),
+          ...(isSuccess && {
+            borderColor: 'success.main',
+            borderWidth: 2
+          })
         }}
       >
         {getDisplayContent()}
       </Box>
 
-      {/* File name display */}
-      {fileName && (
+      {uploading && (
         <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-          {uploading ? 'Uploading: ' : 'Selected: '}{fileName}
+          Uploading: {fileName}
         </Typography>
       )}
-      
-      {/* Helper text */}
-      {helperText && !fileName && (
-        <Typography variant="caption" color="textSecondary" sx={{ mt: 1, display: 'block' }}>
-          {helperText}
-        </Typography>
-      )}
-      
-      {/* Error display from formik */}
-      {formik.touched[tempIdField] && formik.errors[tempIdField] && (
-        <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
-          {formik.errors[tempIdField]}
-        </Typography>
+
+      {helperTextToShow && (
+        <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          {isSuccess && <CheckCircle size={16} color="success.main" />}
+          <EllipsisText
+            text={helperTextToShow}
+            variant="caption"
+            sx={{
+              display: 'block',
+              color: hasError ? 'error.main' : isSuccess ? 'success.main' : 'text.secondary',
+              maxWidth: '100%'
+            }}
+          />
+        </Box>
       )}
     </Box>
   );
