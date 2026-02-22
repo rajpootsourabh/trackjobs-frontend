@@ -193,18 +193,19 @@ const JobList = () => {
                         <HeaderSearch
                             value={searchInput}
                             onChange={handleSearchChange}
-                            placeholder="Search jobs by number or title..."
+                            placeholder="Search jobs..."
                         />
-                        <CustomButton
+                        {/* <CustomButton
                             label="Create Invoice"
                             onClick={handleCreateInvoice}
                             icon={FileTextIcon}
                             disabled={selectedJobs.length !== 1}
                             iconProps={{ size: 18 }}
                             sx={{ textTransform: 'none' }}
-                        />
+                        /> */}
                         <CustomButton
                             label="New Job"
+                            disabled={true}
                             onClick={handleCreateJob}
                             icon={Add}
                             sx={{ textTransform: 'none' }}
