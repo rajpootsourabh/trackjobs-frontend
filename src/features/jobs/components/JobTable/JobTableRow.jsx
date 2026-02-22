@@ -61,10 +61,7 @@ const JobTableRow = ({ job, isSelected, onSelect }) => {
     const clientType = job.client?.client_type || 'commercial';
     const jobNumber = job.job_number || 'N/A';
     const title = job.title || 'Untitled Job';
-    const workType = formatWorkType(job.work_type);
-    const priority = job.priority || 'medium';
     const status = job.status || 'pending';
-    const startDate = job.start_date || 'Not set';
     const totalAmount = job.total_amount || 0;
     const formattedTotal = job.formatted_total || `$${totalAmount.toFixed(2)}`;
     const assignedTo = job.assigned_to;
@@ -72,8 +69,17 @@ const JobTableRow = ({ job, isSelected, onSelect }) => {
     const attachmentCount = job.stats?.total_attachments || 0;
 
     return (
-        <TableRow hover selected={isSelected}>
-            <TableCell padding="checkbox">
+        <TableRow
+            hover
+            selected={isSelected}
+            sx={{
+                height: '73px', // Match skeleton row height
+                '& .MuiTableCell-root': {
+                    py: '16px', // Match skeleton padding
+                }
+            }}
+        >
+            <TableCell padding="checkbox" >
                 <Checkbox size="small" checked={isSelected} onChange={() => onSelect(job.id)} />
             </TableCell>
 
@@ -89,13 +95,22 @@ const JobTableRow = ({ job, isSelected, onSelect }) => {
                                     : 'warning.main',
                             }}
                         />
-                        <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                                {jobNumber}
-                            </Typography>
+                        <Box sx={{ minWidth: 0 }}> {/* Add minWidth:0 for proper text truncation */}
+                            <EllipsisText
+                                text={jobNumber}
+                                sx={{
+                                    fontWeight: 500,
+                                    fontSize: '0.9rem',
+                                    maxWidth: 180 // Adjust based on your needs
+                                }}
+                            />
                             <EllipsisText
                                 text={title}
-                                sx={{ fontSize: '0.75rem', color: 'text.secondary', maxWidth: 200 }}
+                                sx={{
+                                    fontSize: '0.75rem',
+                                    color: 'text.secondary',
+                                    maxWidth: 180 // Adjust based on your needs
+                                }}
                             />
                         </Box>
                     </Box>
@@ -110,32 +125,24 @@ const JobTableRow = ({ job, isSelected, onSelect }) => {
                     ) : (
                         <Home size={18} color="#ed6c02" />
                     )}
-                    <Box>
+                    <Box sx={{ minWidth: 0 }}> {/* Add minWidth:0 for proper text truncation */}
                         <EllipsisText
                             text={clientName}
-                            sx={{ fontSize: '0.9rem', fontWeight: 500, maxWidth: 180 }}
+                            sx={{
+                                fontSize: '0.9rem',
+                                fontWeight: 500,
+                                maxWidth: 150 // Adjust based on your needs
+                            }}
                         />
-                    </Box>
-                </Box>
-            </TableCell>
-
-            {/* Work Type & Schedule Column */}
-            <TableCell>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                    <Chip
-                        label={workType}
-                        size="small"
-                        sx={{
-                            bgcolor: '#f3f4f6',
-                            color: '#374151',
-                            height: 20,
-                            width: 'fit-content',
-                            '& .MuiChip-label': {
+                        {/* <EllipsisText
+                            text={clientType.toUpperCase()}
+                            sx={{
                                 fontSize: '0.7rem',
-                                px: 0.8,
-                            },
-                        }}
-                    />
+                                color: 'text.secondary',
+                                maxWidth: 150 // Adjust based on your needs
+                            }}
+                        /> */}
+                    </Box>
                 </Box>
             </TableCell>
 
@@ -154,6 +161,9 @@ const JobTableRow = ({ job, isSelected, onSelect }) => {
                                 px: 0.8,
                                 fontWeight: 500,
                                 textTransform: 'capitalize',
+                                maxWidth: 80,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
                             },
                         }}
                     />
@@ -167,10 +177,6 @@ const JobTableRow = ({ job, isSelected, onSelect }) => {
                         <ProfileAvatar
                             name={assignedTo.full_name || 'Unknown User'}
                             size={24}
-                        />
-                        <EllipsisText
-                            text={assignedTo.full_name || 'N/A'}
-                            sx={{ fontSize: '0.85rem', maxWidth: 120 }}
                         />
                     </Box>
                 ) : (
@@ -198,10 +204,29 @@ const JobTableRow = ({ job, isSelected, onSelect }) => {
 
             {/* Amount Column */}
             <TableCell align="right">
-                <Typography variant="body2" sx={{ fontWeight: 600, color: '#2e7d32' }}>
-                    {formattedTotal}
-                </Typography>
+                <EllipsisText
+                    text={formattedTotal}
+                    sx={{
+                        fontWeight: 600,
+                        color: '#2e7d32',
+                        maxWidth: 100 // Adjust based on your needs
+                    }}
+                />
             </TableCell>
+
+            {/* Start Date Column - Uncomment if you want to show it */}
+            {/* <TableCell>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Calendar size={14} color="#757575" />
+                    <EllipsisText
+                        text={startDate}
+                        sx={{ 
+                            fontSize: '0.8rem',
+                            maxWidth: 100
+                        }}
+                    />
+                </Box>
+            </TableCell> */}
         </TableRow>
     );
 };

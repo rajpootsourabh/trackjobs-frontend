@@ -1,4 +1,6 @@
 // services/api/interceptors/errorInterceptor.js
+import axios from "axios";
+
 export const errorInterceptor = async (error) => {
   // Log in development
   if (process.env.NODE_ENV === "development") {
@@ -14,9 +16,15 @@ export const errorInterceptor = async (error) => {
   // Handle specific error cases
   if (error.response) {
     const { status, data } = error.response;
+    const isLoginEndpoint = error.config?.url?.includes('/api/v1/auth/login');
 
     switch (status) {
       case 401:
+        // Don't redirect for login endpoint - just return the error
+        if (isLoginEndpoint) {
+          console.log('Login failed - showing error message');
+          return Promise.reject(error);
+        }
         return handleUnauthorized(error);
 
       case 403:
@@ -43,8 +51,16 @@ export const errorInterceptor = async (error) => {
   }
 };
 
-// Specific error handlers
+// Update handleUnauthorized to be more careful
 const handleUnauthorized = async (error) => {
+  // Skip if we're already on login page or if this is a login request
+  const isLoginPage = window.location.pathname.includes('/auth/login');
+  const isLoginEndpoint = error.config?.url?.includes('/api/v1/auth/login');
+  
+  if (isLoginPage || isLoginEndpoint) {
+    return Promise.reject(error);
+  }
+
   // Try to refresh token
   try {
     const refreshToken = localStorage.getItem("refresh_token");
@@ -66,25 +82,28 @@ const handleUnauthorized = async (error) => {
 
   // No refresh token or refresh failed
   clearAuthData();
-  redirectToLogin();
+  
+  // Only redirect if not already on login page
+  if (!isLoginPage) {
+    redirectToLogin();
+  }
+  
   return Promise.reject(error);
 };
 
+// Rest of the handlers remain the same
 const handleForbidden = (error) => {
-  // Log to monitoring service
   console.warn("Access forbidden:", error.response?.data?.message);
   return Promise.reject(error);
 };
 
 const handleValidationError = (error) => {
-  // Transform validation errors for easier handling in components
   const validationErrors = error.response?.data?.errors || {};
   error.validationErrors = validationErrors;
   return Promise.reject(error);
 };
 
 const handleRateLimit = (error) => {
-  // Show user-friendly message
   error.userMessage = "Too many requests. Please try again later.";
   return Promise.reject(error);
 };
@@ -117,7 +136,8 @@ const clearAuthData = () => {
 };
 
 const redirectToLogin = () => {
-  if (!window.location.pathname.includes("/signin")) {
-    window.location.href = "/signin";
+  if (!window.location.pathname.includes("/auth/login") && 
+      !window.location.pathname.includes("/login")) {
+    window.location.href = "/auth/login";
   }
 };

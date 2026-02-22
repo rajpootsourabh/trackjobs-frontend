@@ -25,8 +25,7 @@ const JobTableHeader = ({ selectAll, onSelectAll }) => {
                     />
                 </TableCell>
                 <TableCell>Job Number / Title</TableCell>
-                <TableCell>Client</TableCell>
-                <TableCell>Work Type</TableCell>
+                <TableCell>Customer</TableCell>
                 <TableCell>Status</TableCell>
                 <TableCell>Assigned To</TableCell>
                 <TableCell>Tasks / Files</TableCell>

@@ -1,132 +1,112 @@
 // src/features/jobs/pages/JobList.jsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box } from '@mui/material';
+import { Box, Fade } from '@mui/material';
 import { Add } from '@mui/icons-material';
-import { FileTextIcon, Filter } from 'lucide-react';
+import { FileTextIcon } from 'lucide-react';
 import JobTable from '../components/JobTable/JobTable';
+import JobTableSkeleton from '../skeletons/JobTableSkeleton'; // Import the new skeleton
 import PageHeader from '../../../components/common/PageHeader';
-import TableSkeleton from '../../../components/common/Loader/TableSkeleton';
 import ErrorAlert from '../../../components/feedback/ErrorAlert';
 import HeaderSearch from '../../../components/common/HeaderSearch';
 import CustomButton from '../../../components/common/CustomButton';
-import jobService from '../services/jobService';
+import { useJobs } from '../hooks/useJobs';
 import { useToast } from '../../../components/common/ToastProvider';
 
 const JobList = () => {
     const navigate = useNavigate();
     const { showToast } = useToast();
-    const [jobs, setJobs] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
+
+    const {
+        jobs,
+        loading,
+        error,
+        pagination,
+        filters,
+        handleSearch,
+        handlePageChange: hookHandlePageChange,
+        handleFilterChange,
+        setPerPage,
+        refresh,
+        clearError,
+    } = useJobs({ autoFetch: true });
+
     const [selectedJobs, setSelectedJobs] = useState([]);
     const [selectAll, setSelectAll] = useState(false);
-    const [pagination, setPagination] = useState({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0,
-        perPage: 10
-    });
-    const [filters, setFilters] = useState({});
+    const [searchInput, setSearchInput] = useState('');
+
+    // Track loading state for smooth transitions
+    const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
+    const [showRefreshSkeleton, setShowRefreshSkeleton] = useState(false);
 
     const searchDebounceRef = useRef(null);
+    const isInitialMount = useRef(true);
+    const refreshTimeoutRef = useRef(null);
 
-    // Fetch jobs
-    const fetchJobs = useCallback(async (params = {}) => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await jobService.getJobs({
-                page: pagination.currentPage,
-                per_page: pagination.perPage,
-                search: searchTerm || undefined,
-                ...filters,
-                ...params
-            });
-
-            setJobs(response.data.data || []);
-            setPagination({
-                currentPage: response.data.meta?.current_page || 1,
-                totalPages: response.data.meta?.last_page || 1,
-                totalItems: response.data.meta?.total || 0,
-                perPage: response.data.meta?.per_page || 10
-            });
-        } catch (err) {
-            console.error('Error fetching jobs:', err);
-            setError('Failed to load jobs. Please try again.');
-            showToast('Failed to load jobs', 'error');
-        } finally {
-            setLoading(false);
-        }
-    }, [pagination.currentPage, pagination.perPage, searchTerm, filters, showToast]);
-
-    // Initial fetch
-    useEffect(() => {
-        fetchJobs();
-    }, [fetchJobs]);
-
-    // Handle search with debounce
+    // Handle search input change with debounce
     const handleSearchChange = useCallback((value) => {
-        setSearchTerm(value);
+        setSearchInput(value);
 
         if (searchDebounceRef.current) {
             clearTimeout(searchDebounceRef.current);
         }
 
         searchDebounceRef.current = setTimeout(() => {
-            setPagination(prev => ({ ...prev, currentPage: 1 }));
-            fetchJobs({ page: 1, search: value || undefined });
+            setShowRefreshSkeleton(true);
+            handleSearch(value);
             setSelectedJobs([]);
             setSelectAll(false);
-        }, 300);
-    }, [fetchJobs]);
+        }, 500);
+    }, [handleSearch]);
 
     // Handle page change
-    const handlePageChange = (page) => {
-        setPagination(prev => ({ ...prev, currentPage: page }));
-        fetchJobs({ page });
+    const handlePageChange = useCallback((page) => {
+        setShowRefreshSkeleton(true);
+        hookHandlePageChange(null, page - 1);
         setSelectedJobs([]);
         setSelectAll(false);
-    };
+    }, [hookHandlePageChange]);
 
     // Handle rows per page change
-    const handleRowsPerPageChange = (event) => {
+    const handleRowsPerPageChange = useCallback((event) => {
         const newPerPage = parseInt(event.target.value, 10);
-        setPagination(prev => ({ ...prev, perPage: newPerPage, currentPage: 1 }));
-        fetchJobs({ per_page: newPerPage, page: 1 });
-        setSelectedJobs([]);
-        setSelectAll(false);
-    };
+        console.log('Changing rows per page to:', newPerPage);
+        if (setPerPage) {
+            setShowRefreshSkeleton(true);
+            setPerPage(newPerPage);
+            setSelectedJobs([]);
+            setSelectAll(false);
+        }
+    }, [setPerPage]);
 
     // Handle select all
-    const handleSelectAll = () => {
+    const handleSelectAll = useCallback(() => {
         if (selectAll) {
             setSelectedJobs([]);
         } else {
             setSelectedJobs(jobs.map(job => job.id));
         }
         setSelectAll(!selectAll);
-    };
+    }, [jobs, selectAll]);
 
     // Handle individual job selection
-    const handleSelectJob = (jobId) => {
-        if (selectedJobs.includes(jobId)) {
-            setSelectedJobs(selectedJobs.filter(id => id !== jobId));
-        } else {
-            setSelectedJobs([...selectedJobs, jobId]);
-        }
-    };
+    const handleSelectJob = useCallback((jobId) => {
+        setSelectedJobs(prev => {
+            if (prev.includes(jobId)) {
+                return prev.filter(id => id !== jobId);
+            } else {
+                return [...prev, jobId];
+            }
+        });
+    }, []);
 
     // Handle create job
-    const handleCreateJob = () => {
-        alert("Feature is not yet implemented")
-        //navigate('/jobs/new');
-    };
+    const handleCreateJob = useCallback(() => {
+        alert("Feature is not yet implemented");
+    }, []);
 
     // Handle create invoice for selected job
-    const handleCreateInvoice = () => {
+    const handleCreateInvoice = useCallback(() => {
         if (selectedJobs.length === 1) {
             const selectedJob = jobs.find(job => job.id === selectedJobs[0]);
             if (selectedJob) {
@@ -136,7 +116,7 @@ const JobList = () => {
                             id: selectedJob.id,
                             number: selectedJob.job_number,
                             title: selectedJob.title,
-                            client: selectedJob.client,
+                            client: selectedJob.client_name,
                             amount: selectedJob.total_amount,
                             currency: selectedJob.currency
                         }
@@ -146,31 +126,58 @@ const JobList = () => {
         } else if (selectedJobs.length > 1) {
             showToast('Please select only one job to create an invoice.', 'warning');
         }
-    };
+    }, [selectedJobs, jobs, navigate, showToast]);
 
-    // Handle filter
-    const handleFilter = () => {
-        // Implement filter modal or drawer
-        console.log('Open filters');
-    };
-
-    // Update selectAll when jobs change
+    // Update selectAll when jobs or selectedJobs change
     useEffect(() => {
-        if (jobs.length > 0 && selectedJobs.length === jobs.length) {
+        if (jobs.length > 0 && selectedJobs.length === jobs.length && jobs.length > 0) {
             setSelectAll(true);
         } else {
             setSelectAll(false);
         }
     }, [jobs, selectedJobs]);
 
-    // Cleanup debounce
+    // Cleanup debounce on unmount
     useEffect(() => {
         return () => {
             if (searchDebounceRef.current) {
                 clearTimeout(searchDebounceRef.current);
             }
+            if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current);
+            }
         };
     }, []);
+
+    // Sync search input with filter value when it changes externally
+    useEffect(() => {
+        if (!isInitialMount.current && filters?.search !== undefined) {
+            setSearchInput(filters.search || '');
+        }
+        isInitialMount.current = false;
+    }, [filters?.search]);
+
+    // Handle loading states
+    useEffect(() => {
+        if (loading) {
+            if (jobs.length > 0) {
+                setShowRefreshSkeleton(true);
+            } else {
+                setShowInitialSkeleton(true);
+            }
+        } else {
+            refreshTimeoutRef.current = setTimeout(() => {
+                setShowInitialSkeleton(false);
+                setShowRefreshSkeleton(false);
+            }, 300);
+        }
+
+        return () => {
+            if (refreshTimeoutRef.current) {
+                clearTimeout(refreshTimeoutRef.current);
+            }
+        };
+    }, [loading, jobs.length]);
 
     return (
         <div className="min-h-full bg-gray-50">
@@ -184,18 +191,18 @@ const JobList = () => {
                 actions={
                     <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                         <HeaderSearch
-                            value={searchTerm}
+                            value={searchInput}
                             onChange={handleSearchChange}
                             placeholder="Search jobs by number or title..."
                         />
-                        {/* <CustomButton
+                        <CustomButton
                             label="Create Invoice"
                             onClick={handleCreateInvoice}
                             icon={FileTextIcon}
                             disabled={selectedJobs.length !== 1}
                             iconProps={{ size: 18 }}
                             sx={{ textTransform: 'none' }}
-                        /> */}
+                        />
                         <CustomButton
                             label="New Job"
                             onClick={handleCreateJob}
@@ -209,35 +216,78 @@ const JobList = () => {
             {error && (
                 <ErrorAlert
                     message={error}
-                    onRetry={() => fetchJobs()}
-                    onClose={() => setError(null)}
+                    onRetry={refresh}
+                    onClose={clearError}
                     className="mb-6"
                 />
             )}
 
             <div className="bg-white rounded-lg mt-6">
-                {loading ? (
-                    <TableSkeleton
-                        rows={6}
-                        columns={6}
-                        hasCheckbox={true}
-                        hasAvatar={true}
-                        hasStatus={true}
-                    />
-                ) : (
-                    <JobTable
-                        jobs={jobs}
-                        selectedJobs={selectedJobs}
-                        onSelectJob={handleSelectJob}
-                        onSelectAll={handleSelectAll}
-                        selectAll={selectAll}
-                        onPageChange={handlePageChange}
-                        currentPage={pagination.currentPage}
-                        totalPages={pagination.totalPages}
-                        totalItems={pagination.totalItems}
-                        itemsPerPage={pagination.perPage}
-                        showPagination={true}
-                    />
+                {/* Initial load skeleton */}
+                {showInitialSkeleton && (
+                    <Fade in={showInitialSkeleton} timeout={300}>
+                        <Box>
+                            <JobTableSkeleton
+                                rows={pagination?.perPage || 5}
+                                showPagination={true}
+                                totalItems={pagination?.totalItems || 25}
+                                currentPage={1}
+                                itemsPerPage={pagination?.perPage || 5}
+                                onPageChange={handlePageChange}
+                                onRowsPerPageChange={handleRowsPerPageChange}
+                            />
+                        </Box>
+                    </Fade>
+                )}
+
+                {/* Main content */}
+                {!showInitialSkeleton && (
+                    <Box sx={{ position: 'relative' }}>
+                        {/* Main table */}
+                        <JobTable
+                            jobs={jobs}
+                            selectedJobs={selectedJobs}
+                            onSelectJob={handleSelectJob}
+                            onSelectAll={handleSelectAll}
+                            selectAll={selectAll}
+                            onPageChange={handlePageChange}
+                            currentPage={pagination?.currentPage || 1}
+                            totalPages={pagination?.totalPages || 1}
+                            totalItems={pagination?.totalItems || 0}
+                            itemsPerPage={pagination?.perPage || 5}
+                            onRowsPerPageChange={handleRowsPerPageChange}
+                            showPagination={true}
+                        />
+
+                        {/* Refresh skeleton overlay */}
+                        {showRefreshSkeleton && (
+                            <Fade in={showRefreshSkeleton} timeout={300}>
+                                <Box
+                                    sx={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
+                                        backgroundColor: 'white',
+                                        zIndex: 10,
+                                        borderRadius: 2,
+                                        overflow: 'hidden',
+                                    }}
+                                >
+                                    <JobTableSkeleton
+                                        rows={pagination?.perPage || 5}
+                                        showPagination={true}
+                                        totalItems={pagination?.totalItems || 25}
+                                        currentPage={pagination?.currentPage || 1}
+                                        itemsPerPage={pagination?.perPage || 5}
+                                        onPageChange={handlePageChange}
+                                        onRowsPerPageChange={handleRowsPerPageChange}
+                                    />
+                                </Box>
+                            </Fade>
+                        )}
+                    </Box>
                 )}
             </div>
         </div>

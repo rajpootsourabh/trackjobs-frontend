@@ -1,7 +1,9 @@
+// components/routes/ProtectedRoute.js
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '../../features/auth/hooks/useAuth';
 import Loader from '../common/Loader/Loader';
+import { Box, Typography, Button } from '@mui/material';
 
 const ProtectedRoute = ({ children, requiredRoles = [], requiredPermissions = [] }) => {
   const { 
@@ -9,26 +11,70 @@ const ProtectedRoute = ({ children, requiredRoles = [], requiredPermissions = []
     loading, 
     hasRole, 
     hasPermission,
-    user 
+    user,
+    error 
   } = useAuth();
   const location = useLocation();
+
+  // Add error boundary
+  if (error) {
+    console.error('Auth error in ProtectedRoute:', error);
+    return (
+      <Box sx={{ p: 3, textAlign: 'center' }}>
+        <Typography color="error" gutterBottom>
+          Authentication Error
+        </Typography>
+        <Button 
+          variant="contained" 
+          onClick={() => window.location.href = '/auth/login'}
+        >
+          Go to Login
+        </Button>
+      </Box>
+    );
+  }
 
   if (loading) {
     return <Loader message="Checking authentication..." />;
   }
 
   if (!isAuthenticated) {
+    console.log('User not authenticated, redirecting to login');
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
-  const hasRequiredRole = requiredRoles.length === 0 || 
-    requiredRoles.some(role => hasRole(role));
+  // Check roles if required
+  if (requiredRoles.length > 0) {
+    const hasRequiredRole = requiredRoles.some(role => {
+      try {
+        return hasRole(role);
+      } catch (err) {
+        console.error('Error checking role:', err);
+        return false;
+      }
+    });
 
-  const hasRequiredPermission = requiredPermissions.length === 0 ||
-    requiredPermissions.some(permission => hasPermission(permission));
+    if (!hasRequiredRole) {
+      console.log('User missing required roles');
+      return <Navigate to="/unauthorized" replace />;
+    }
+  }
 
-  if (!hasRequiredRole || !hasRequiredPermission) {
-    return <Navigate to="/unauthorized" replace />;
+  // Check permissions if required
+  if (requiredPermissions.length > 0) {
+    const hasRequiredPermission = requiredPermissions.some(permission => {
+      try {
+        return hasPermission(permission);
+      } catch (err) {
+        console.error('Error checking permission:', err);
+        return false;
+      }
+    });
+
+    if (!hasRequiredPermission) {
+      console.log('User missing required permissions');
+      return <Navigate to="/unauthorized" replace />;
+    }
   }
 
   return children;

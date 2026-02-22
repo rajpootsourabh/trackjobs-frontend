@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+// features/auth/pages/Register.jsx
+import React, { useState, useEffect } from 'react';
 import { Formik, Form } from 'formik';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
   Typography,
-  Alert,
   Checkbox,
   FormControlLabel,
   FormHelperText,
@@ -16,42 +16,104 @@ import DebouncedTextField from '../../../components/common/form/DebouncedTextFie
 import PasswordField from '../../../components/common/form/PasswordField';
 import AuthLayout from '../components/ui/AuthLayout';
 import { registerSchema } from '../schemas/validationSchemas';
-import { register } from '../services';
+import { useAuth } from '../hooks/useAuth';
+import ErrorDialog from '../../../components/common/ErrorDialog';
 
 const Register = () => {
   const navigate = useNavigate();
-  const [status, setStatus] = useState({});
-  const [loadingAction, setLoadingAction] = useState(null);
+  const {
+    register: registerUser,
+    loading,
+    error,
+    validationErrors,
+    lastErrorCode,
+    clearError
+  } = useAuth();
 
-  const handleSubmit = async (values, { setSubmitting, setErrors }) => {
-    setStatus({});
-    setLoadingAction('register');
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [currentError, setCurrentError] = useState(null);
 
+  // Handle Redux errors - SHOWS DIALOG FOR ALL ERRORS
+  useEffect(() => {
+    if (error) {
+      // Create error object with full details
+      const errorObject = {
+        response: {
+          data: {
+            message: error,
+            code: lastErrorCode,
+            errors: validationErrors,
+            timestamp: new Date().toISOString()
+          }
+        }
+      };
+
+      setCurrentError(errorObject);
+      setErrorDialogOpen(true);
+    }
+  }, [error, lastErrorCode, validationErrors]);
+
+  const handleSubmit = async (values, { setSubmitting }) => {
     try {
-      await register(values);
-      navigate('/auth/login', {
-        state: { message: 'Registration successful! Please login to continue.' }
-      });
-    } catch (error) {
-      if (error.errors) {
-        setErrors(error.errors);
-      } else {
-        setStatus({ apiError: error.message || 'Registration failed. Please try again.' });
+      // Send ALL fields to backend
+      const registrationData = {
+        business_name: values.business_name,
+        website_name: values.website_name,
+        full_name: values.full_name,
+        email: values.email,
+        mobile_number: values.mobile_number,
+        password: values.password,
+        password_confirmation: values.password_confirmation,
+        terms_accepted: values.terms_accepted
+      };
+
+      console.log('Sending registration data:', registrationData);
+
+      const result = await registerUser(registrationData);
+
+      if (result) {
+        // Navigate to login with success message
+        navigate('/auth/login', {
+          state: { message: 'Registration successful! Please login to continue.' }
+        });
       }
+    } catch (err) {
+      console.error('Registration error:', err);
     } finally {
-      setLoadingAction(null);
       setSubmitting(false);
+    }
+  };
+
+  const handleErrorAction = (action) => {
+    if (action === 'retry') {
+      setErrorDialogOpen(false);
+      clearError();
+    } else if (action === 'contact-support') {
+      window.location.href = 'mailto:support@example.com';
+    } else if (action === 'login') {
+      navigate('/auth/login');
     }
   };
 
   return (
     <AuthLayout title="SIGN UP" isRegister>
-      <Paper 
-        elevation={0} 
-        sx={{ 
-          p:1,
-          borderRadius: 2, 
-          maxWidth: 500, 
+      {/* Error Dialog for ALL errors */}
+      <ErrorDialog
+        open={errorDialogOpen}
+        onClose={() => {
+          setErrorDialogOpen(false);
+          clearError();
+        }}
+        error={currentError}
+        onAction={handleErrorAction}
+      />
+
+      <Paper
+        elevation={0}
+        sx={{
+          p: 1,
+          borderRadius: 2,
+          maxWidth: 500,
           mx: 'auto',
         }}
       >
@@ -73,14 +135,7 @@ const Register = () => {
         >
           {({ isSubmitting, errors, touched, setFieldValue, setFieldTouched, values }) => (
             <Form>
-              {/* Remove any border from the Form itself */}
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-                {status?.apiError && (
-                  <Alert severity="error" sx={{ mb: 2 }}>
-                    {status.apiError}
-                  </Alert>
-                )}
-
                 {/* Business Name */}
                 <DebouncedTextField
                   name="business_name"
@@ -93,6 +148,7 @@ const Register = () => {
                   helperText={touched.business_name && errors.business_name}
                   required
                   size="medium"
+                  disabled={loading}
                 />
 
                 {/* Website Name */}
@@ -107,6 +163,7 @@ const Register = () => {
                   helperText={touched.website_name && errors.website_name}
                   required
                   size="medium"
+                  disabled={loading}
                 />
 
                 {/* Full Name */}
@@ -121,6 +178,7 @@ const Register = () => {
                   helperText={touched.full_name && errors.full_name}
                   required
                   size="medium"
+                  disabled={loading}
                 />
 
                 {/* Email */}
@@ -136,6 +194,7 @@ const Register = () => {
                   helperText={touched.email && errors.email}
                   required
                   size="medium"
+                  disabled={loading}
                 />
 
                 {/* Mobile Number */}
@@ -150,6 +209,7 @@ const Register = () => {
                   helperText={touched.mobile_number && errors.mobile_number}
                   required
                   size="medium"
+                  disabled={loading}
                 />
 
                 {/* Password */}
@@ -164,6 +224,7 @@ const Register = () => {
                   helperText={touched.password && errors.password}
                   required
                   size="medium"
+                  disabled={loading}
                 />
 
                 {/* Confirm Password */}
@@ -178,6 +239,7 @@ const Register = () => {
                   helperText={touched.password_confirmation && errors.password_confirmation}
                   required
                   size="medium"
+                  disabled={loading}
                 />
 
                 {/* Terms Checkbox */}
@@ -190,15 +252,16 @@ const Register = () => {
                         onBlur={() => setFieldTouched('terms_accepted', true)}
                         color="primary"
                         size="medium"
+                        disabled={loading}
                       />
                     }
                     label={
                       <Typography variant="body2">
                         I agree to the{' '}
-                        <Link 
-                          to="/terms" 
-                          style={{ 
-                            color: '#1976d2', 
+                        <Link
+                          to="/terms"
+                          style={{
+                            color: '#1976d2',
                             textDecoration: 'none',
                             '&:hover': { textDecoration: 'underline' }
                           }}
@@ -220,18 +283,17 @@ const Register = () => {
                   <Button
                     type="submit"
                     variant="contained"
-                    disabled={isSubmitting || loadingAction !== null}
+                    disabled={isSubmitting || loading}
                     sx={{
                       textTransform: 'none',
                       fontSize: '18px',
-                      // fontWeight: 600,
                       minWidth: '220px',
                       position: 'relative',
-                      minHeight:'45px',
+                      minHeight: '45px',
                       borderRadius: '8px'
                     }}
                   >
-                    {loadingAction === 'register' ? (
+                    {loading ? (
                       <CircularProgress size={25} color="inherit" />
                     ) : 'Sign Up'}
                   </Button>
@@ -246,8 +308,8 @@ const Register = () => {
             Already have an account?{' '}
             <Link
               to="/auth/login"
-              style={{ 
-                color: '#1976d2', 
+              style={{
+                color: '#1976d2',
                 textDecoration: 'none',
                 fontWeight: 500
               }}

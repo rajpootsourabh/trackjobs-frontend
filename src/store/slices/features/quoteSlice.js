@@ -1,3 +1,4 @@
+// store/slices/features/quotesSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import quoteService from "../../../features/quotes/services/quoteService";
 

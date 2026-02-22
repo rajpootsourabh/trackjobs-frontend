@@ -1,96 +1,224 @@
-// src/services/api/jobService.js
-import apiClient, { fileUploadClient } from "../../../services/api/httpClient"; // Make sure this path is correct
-import uploadClient from "../../../services/api/uploadClient";
+import BaseApiService from "../../../services/api/baseApiService";
+import {
+  transformJobFromApi,
+  transformJobForApi,
+} from "../utils/jobTransformers";
 
-const jobService = {
-  // Get all jobs with filters
-  getJobs: (params = {}) => {
-    return apiClient.get("api/v1/vendors/jobs", { params }); // Remove /api/v1 if it's in baseURL
-  },
+class JobService extends BaseApiService {
+  constructor() {
+    super("jobs", { vendorIdInPath: true });
+  }
 
-  // Get single job by ID
-  getJobById: (id) => {
-    return apiClient.get(`api/v1/vendors/jobs/${id}`);
-  },
+  async getAll(params = {}) {
+    try {
+      console.log("JobService.getAll called with params:", params);
+      const response = await super.getAll(params);
+      console.log("Raw API response:", response);
 
-  // Get job by number
-  getJobByNumber: (jobNumber) => {
-    return apiClient.get(`api/v1/vendors/jobs/number/${jobNumber}`);
-  },
+      let jobs = [];
+      let paginationData = {
+        total: 0,
+        perPage: params.per_page || 15, // Use the requested perPage as fallback
+        currentPage: 1,
+        totalPages: 1,
+        from: null,
+        to: null,
+      };
 
-  // Create new job
-  createJob: (data) => {
-    return apiClient.post("api/v1/vendors/jobs", data);
-  },
+      if (response && response.data) {
+        if (Array.isArray(response.data)) {
+          jobs = response.data;
+        } else if (response.data.data && Array.isArray(response.data.data)) {
+          jobs = response.data.data;
+        }
+      } else if (response && Array.isArray(response)) {
+        jobs = response;
+      }
 
-  // Update job
-  updateJob: (id, data) => {
-    return apiClient.put(`api/v1/vendors/jobs/${id}`, data);
-  },
+      const transformedJobs = jobs.map(transformJobFromApi);
 
-  // Update job status
-  updateJobStatus: (id, status) => {
-    return apiClient.patch(`api/v1/vendors/jobs/${id}/status`, { status });
-  },
+      if (response?.meta) {
+        paginationData = {
+          total: response.meta.total || 0,
+          // Use API response if available, otherwise use the requested value
+          perPage: response.meta.per_page || params.per_page || 15,
+          currentPage: response.meta.current_page || 1,
+          totalPages: response.meta.last_page || 1,
+          from: response.meta.from || null,
+          to: response.meta.to || null,
+        };
+      } else if (response?.data?.meta) {
+        paginationData = {
+          total: response.data.meta.total || 0,
+          perPage: response.data.meta.per_page || params.per_page || 15,
+          currentPage: response.data.meta.current_page || 1,
+          totalPages: response.data.meta.last_page || 1,
+          from: response.data.meta.from || null,
+          to: response.data.meta.to || null,
+        };
+      }
 
-  // Delete job
-  deleteJob: (id) => {
-    return apiClient.delete(`api/v1/vendors/jobs/${id}`);
-  },
+      console.log("Transformed jobs:", transformedJobs);
+      console.log("Pagination data:", paginationData);
+
+      return {
+        data: transformedJobs,
+        pagination: paginationData,
+        links: response?.links || response?.data?.links || {},
+      };
+    } catch (error) {
+      console.error("Error in JobService.getAll:", error);
+      throw error;
+    }
+  }
+
+  async getById(id) {
+    try {
+      const response = await super.getById(id);
+      const jobData = response?.data || response;
+      return transformJobFromApi(jobData);
+    } catch (error) {
+      console.error(`Error fetching job ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async create(data) {
+    try {
+      const apiData = transformJobForApi(data);
+      const response = await super.create(apiData);
+      const jobData = response?.data || response;
+      return transformJobFromApi(jobData);
+    } catch (error) {
+      console.error("Error creating job:", error);
+      throw error;
+    }
+  }
+
+  async update(id, data) {
+    try {
+      const apiData = transformJobForApi(data);
+      const response = await super.update(id, apiData);
+      const jobData = response?.data || response;
+      return transformJobFromApi(jobData);
+    } catch (error) {
+      console.error(`Error updating job ${id}:`, error);
+      throw error;
+    }
+  }
+
+  // Custom methods
+  async updateJobStatus(id, status) {
+    try {
+      const url = this.buildUrl(`/jobs/${id}/status`);
+      const response = await this.client.patch(url, { status });
+      const jobData = response?.data?.data || response?.data || response;
+      return transformJobFromApi(jobData);
+    } catch (error) {
+      console.error(`Error updating job status ${id}:`, error);
+      throw error;
+    }
+  }
+
+  async getJobByNumber(jobNumber) {
+    try {
+      const url = this.buildUrl(`/jobs/number/${jobNumber}`);
+      const response = await this.client.get(url);
+      const jobData = response?.data?.data || response?.data || response;
+      return transformJobFromApi(jobData);
+    } catch (error) {
+      console.error(`Error fetching job by number ${jobNumber}:`, error);
+      throw error;
+    }
+  }
 
   // Task management
-  addTask: (jobId, taskData) => {
-    return apiClient.post(`api/v1/vendors/jobs/${jobId}/tasks`, taskData);
-  },
+  async addTask(jobId, taskData) {
+    try {
+      const url = this.buildUrl(`/jobs/${jobId}/tasks`);
+      const response = await this.client.post(url, taskData);
+      return response.data;
+    } catch (error) {
+      console.error(`Error adding task to job ${jobId}:`, error);
+      throw error;
+    }
+  }
 
-  toggleTask: (jobId, taskId) => {
-    return apiClient.patch(
-      `api/v1/vendors/jobs/${jobId}/tasks/${taskId}/toggle`,
-    );
-  },
+  async toggleTask(jobId, taskId) {
+    try {
+      const url = this.buildUrl(`/jobs/${jobId}/tasks/${taskId}/toggle`);
+      const response = await this.client.patch(url);
+      return response.data;
+    } catch (error) {
+      console.error(`Error toggling task ${taskId} for job ${jobId}:`, error);
+      throw error;
+    }
+  }
 
-  deleteTask: (jobId, taskId) => {
-    return apiClient.delete(`api/v1/vendors/jobs/${jobId}/tasks/${taskId}`);
-  },
+  async deleteTask(jobId, taskId) {
+    try {
+      const url = this.buildUrl(`/jobs/${jobId}/tasks/${taskId}`);
+      const response = await this.client.delete(url);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting task ${taskId} from job ${jobId}:`, error);
+      throw error;
+    }
+  }
 
   // Attachment management
-  addAttachment: (jobId, file, fileName, options = {}) => {
-    const formData = new FormData();
-    formData.append("file", file);
+  async addAttachment(jobId, file, fileName, options = {}) {
+    try {
+      const url = this.buildUrl(`/jobs/${jobId}/attachments`);
 
-    // Add context if provided
-    if (options.context) {
-      formData.append("context", options.context);
-      console.log("✅ Adding context to formData:", options.context);
+      const formData = new FormData();
+      formData.append("file", file);
+
+      if (options.context) {
+        formData.append("context", options.context);
+      }
+
+      if (fileName) {
+        formData.append("file_name", fileName);
+      }
+
+      const response = await this.client.post(url, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error(`Error adding attachment to job ${jobId}:`, error);
+      throw error;
     }
+  }
 
-    if (fileName) {
-      formData.append("file_name", fileName);
-    }
-
-    // Log FormData contents for debugging
-    console.log("📦 FormData entries:");
-    for (let pair of formData.entries()) {
-      console.log(
-        `   ${pair[0]}: ${pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]}`,
+  async deleteAttachment(jobId, attachmentId) {
+    try {
+      const url = this.buildUrl(`/jobs/${jobId}/attachments/${attachmentId}`);
+      const response = await this.client.delete(url);
+      return response.data;
+    } catch (error) {
+      console.error(
+        `Error deleting attachment ${attachmentId} from job ${jobId}:`,
+        error,
       );
+      throw error;
     }
+  }
 
-    return uploadClient.post(
-      `api/v1/vendors/jobs/${jobId}/attachments`,
-      formData,
-    );
-  },
-  deleteAttachment: (jobId, attachmentId) => {
-    return apiClient.delete(
-      `api/v1/vendors/jobs/${jobId}/attachments/${attachmentId}`,
-    );
-  },
+  async getStatistics() {
+    try {
+      const url = this.buildUrl("/jobs/statistics");
+      const response = await this.client.get(url);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching job statistics:", error);
+      throw error;
+    }
+  }
+}
 
-  // Get statistics
-  getStatistics: () => {
-    return apiClient.get("api/v1/vendors/jobs/statistics");
-  },
-};
-
-export default jobService;
+export default new JobService();

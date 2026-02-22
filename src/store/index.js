@@ -1,18 +1,19 @@
 // store/index.js
-import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './slices/authSlice';
-import fileUploadReducer from './slices/fileUploadSlice';
-import uiReducer from './slices/uiSlice';
-import clientReducer from './slices/features/clientSlice';
-import quoteReducer from './slices/features/quoteSlice';
+import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "./slices/authSlice";
+import fileUploadReducer from "./slices/fileUploadSlice";
+import uiReducer from "./slices/uiSlice";
+import clientReducer from "./slices/features/clientSlice";
+import quoteReducer from "./slices/features/quoteSlice";
+import jobReducer from "./slices/features/jobSlice";
 
 // Custom middleware for API error handling
-const apiMiddleware = store => next => action => {
+const apiMiddleware = (store) => (next) => (action) => {
   // You can add global API error handling here
-  if (action.type.endsWith('/rejected')) {
+  if (action.type.endsWith("/rejected")) {
     // Log to error tracking service
-    console.error('API Error:', action.error);
-    
+    console.error("API Error:", action.error);
+
     // You could dispatch a notification here
     // store.dispatch(addNotification({ type: 'error', message: action.payload }));
   }
@@ -26,27 +27,33 @@ export const store = configureStore({
     ui: uiReducer,
     clients: clientReducer,
     quotes: quoteReducer,
+    jobs: jobReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         // Ignore non-serializable values in these paths
         ignoredActions: [
-          'persist/PERSIST',
-          'clients/createClient/fulfilled',
-          'clients/updateClient/fulfilled',
-          'quotes/createQuote/fulfilled',
-          'quotes/updateQuote/fulfilled',
+          "persist/PERSIST",
+          "clients/createClient/fulfilled",
+          "clients/updateClient/fulfilled",
+          "quotes/createQuote/fulfilled",
+          "quotes/updateQuote/fulfilled",
+          "jobs/createJob/fulfilled",
+          "jobs/updateJob/fulfilled",
+          "jobs/addAttachment/fulfilled",
         ],
-        ignoredActionPaths: ['meta.arg', 'payload.timestamp'],
+        ignoredActionPaths: ["meta.arg", "payload.timestamp"],
         ignoredPaths: [
-          'clients.currentClient.logo',
-          'clients.clients.logo',
-          'quotes.currentQuote.items',
+          "clients.currentClient.logo",
+          "clients.clients.logo",
+          "quotes.currentQuote.items",
+          "jobs.currentJob.tasks",
+          "jobs.currentJob.attachments_by_context",
         ],
       },
     }).concat(apiMiddleware),
-  devTools: process.env.NODE_ENV !== 'production',
+  devTools: process.env.NODE_ENV !== "production",
 });
 
 export default store;

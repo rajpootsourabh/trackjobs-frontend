@@ -12,23 +12,29 @@ const JobTable = ({
     onSelectAll,
     selectAll,
     onPageChange,
+    onRowsPerPageChange,
     currentPage = 1,
     totalPages = 1,
     totalItems = 0,
-    itemsPerPage = 10,
+    itemsPerPage = 5,
     showPagination = false
 }) => {
-    // Convert to 0-based index for Material-UI pagination
     const pageIndex = currentPage - 1;
 
     const handlePageChange = (event, newPage) => {
-        onPageChange(newPage + 1);
+        if (onPageChange) {
+            onPageChange(newPage + 1);
+        }
     };
 
     const handleRowsPerPageChange = (event) => {
-        // Handle rows per page change if needed
-        console.log('Rows per page:', event.target.value);
+        if (onRowsPerPageChange) {
+            onRowsPerPageChange(event);
+        }
     };
+
+    // Calculate empty rows to fill the page
+    const emptyRows = itemsPerPage - jobs.length;
 
     return (
         <Box sx={{ width: '100%' }}>
@@ -41,10 +47,6 @@ const JobTable = ({
                     overflow: 'hidden',
                     boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                     backgroundColor: '#fff',
-                    transition: 'box-shadow 0.2s ease-in-out',
-                    '&:hover': {
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                    }
                 }}
             >
                 <Table>
@@ -60,9 +62,37 @@ const JobTable = ({
                             />
                         ))}
 
+                        {/* Add invisible empty rows to maintain consistent height */}
+                        {emptyRows > 0 && Array.from({ length: emptyRows }).map((_, index) => (
+                            <TableRow
+                                key={`empty-${index}`}
+                                sx={{
+                                    height: '73px',
+                                    '& .MuiTableCell-root': {
+                                        py: '16px',
+                                        borderBottom: 'none', // Remove all borders
+                                        opacity: 0, // Make content invisible (if any)
+                                    },
+                                    '&:hover': {
+                                        backgroundColor: 'transparent', // No hover effect
+                                    }
+                                }}
+                            >
+                                <TableCell padding="checkbox" />
+                                <TableCell />
+                                <TableCell />
+                                <TableCell />
+                                <TableCell />
+                                <TableCell />
+                                <TableCell />
+                                <TableCell />
+                            </TableRow>
+                        ))}
+
+                        {/* Show "No jobs found" only when there are absolutely no jobs */}
                         {jobs.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                                <TableCell colSpan={8} align="center" sx={{ py: 4, height: '73px' }}>
                                     No jobs found
                                 </TableCell>
                             </TableRow>

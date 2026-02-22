@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Hooks
-import { useAuth } from './hooks/useAuth';
+import { useAuth } from './features/auth/hooks/useAuth';
 
 // Components
 import ErrorBoundary from './components/feedback/ErrorBoundary';
@@ -69,7 +69,7 @@ const AppContent = () => {
         <Route path="/quotes/:id/edit" element={<QuoteEdit />} />
 
         {/* Future Modules with RESTful naming */}
-         <Route path="/jobs" element={<JobList />} />
+        <Route path="/jobs" element={<JobList />} />
         <Route path="/jobs/:id" element={<JobDetails />} />
         {/* <Route path="/jobs/new" element={<div>Create Job</div>} />
         <Route path="/jobs/:id" element={<div>Job Details</div>} />
@@ -83,7 +83,7 @@ const AppContent = () => {
 
         <Route path="/invoices" element={<NotYetDesigned />} />
         <Route path="/timesheets" element={<NotYetDesigned />} />
-        <Route path="/online-booking" element={<OnlineBooking/>} />
+        <Route path="/online-booking" element={<OnlineBooking />} />
         <Route path="/reports" element={<NotYetDesigned />} />
         <Route path="/settings" element={<NotYetDesigned />} />
       </Route>
