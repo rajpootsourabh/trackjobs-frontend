@@ -36,6 +36,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.4.0",
     "react-tooltip": "^5.28.1",
+    "styled-components": "^6.3.11",
     "yup": "^1.7.1"
   },
   "devDependencies": {

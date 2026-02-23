@@ -10,7 +10,10 @@ import {
   Clock,
   BookOpen,
   BarChart3,
-  Settings
+  Settings,
+  Clock10,
+  Calendar1Icon,
+  Book
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -29,8 +32,9 @@ const Sidebar = () => {
     jobs: <Briefcase size={18} />,
     schedule: <Calendar size={18} />,
     invoices: <Receipt size={18} />,
-    timesheets: <Clock size={18} />,
-    booking: <BookOpen size={18} />,
+    timesheets: <Calendar1Icon size={18} />,
+    booking: <Book size={18} />,
+    employees: <Clock10 size={18} />,
     reports: <BarChart3 size={18} />,
     settings: <Settings size={18} />,
   };

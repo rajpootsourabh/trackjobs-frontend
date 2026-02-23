@@ -33,8 +33,12 @@ export default {
           "40%": { transform: "scale(1)", opacity: "1" },
         },
         fadeIn: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
+          "0%": { opacity: "0", transform: "translateY(-10px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        fadeOut: {
+          "0%": { opacity: "1", transform: "translateY(0)" },
+          "100%": { opacity: "0", transform: "translateY(-10px)" },
         },
       },
       animation: {
@@ -42,10 +46,11 @@ export default {
         shrinkToBottom: "shrinkToBottom 200ms ease-in forwards",
         dotPulse: "dotPulse 1.2s infinite ease-in-out",
         "fade-in": "fadeIn 0.2s ease-out",
+        "fade-out": "fadeOut 0.2s ease-in forwards",
       },
       scrollMargin: {
-        '32': '8rem', // for scroll-mt-32
-        '20': '5rem', // optional additional offsets
+        '32': '8rem',
+        '20': '5rem',
       },
       transitionProperty: {
         'scroll': 'scroll-margin, scroll-padding',

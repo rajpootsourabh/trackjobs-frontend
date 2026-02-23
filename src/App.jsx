@@ -34,6 +34,7 @@ import NotYetDesigned from './pages/NotYetDesigned';
 import JobDetails from './features/jobs/pages/JobDetails';
 import OnlineBooking from './features/bookings/pages/OnlineBooking';
 import JobList from './features/jobs/pages/JobList';
+import EmployeeList from './features/employees/pages/EmployeeList';
 
 const AppContent = () => {
   const { loadAuthState, user } = useAuth();
@@ -80,10 +81,12 @@ const AppContent = () => {
         <Route path="/reports" element={<div>Reports</div>} />
         <Route path="/settings" element={<div>Settings</div>} /> */}
 
+        {/* <Route path="/employees" element={<EmployeeList />} />
+        <Route path="/employees" element={<EmployeeList />} /> */}
 
         <Route path="/invoices" element={<NotYetDesigned />} />
         <Route path="/timesheets" element={<NotYetDesigned />} />
-        <Route path="/online-booking" element={<OnlineBooking />} />
+        {/* <Route path="/online-booking" element={<OnlineBooking />} /> */}
         <Route path="/reports" element={<NotYetDesigned />} />
         <Route path="/settings" element={<NotYetDesigned />} />
       </Route>
