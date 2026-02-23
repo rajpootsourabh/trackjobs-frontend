@@ -34,7 +34,7 @@ const Sidebar = () => {
     invoices: <Receipt size={18} />,
     timesheets: <Calendar1Icon size={18} />,
     booking: <Book size={18} />,
-    employees: <Clock10 size={18} />,
+    // employees: <Clock10 size={18} />,
     reports: <BarChart3 size={18} />,
     settings: <Settings size={18} />,
   };

@@ -24,7 +24,7 @@ export const APP_NAME = "TrakJobs";
 export const NAV_ITEMS = [
   { path: "/dashboard", label: "Dashboard", icon: "dashboard" },
   { path: "/customers", label: "Customers", icon: "customers" },
-  { path: "/employees", label: "Employees", icon: "employees" },
+  // { path: "/employees", label: "Employees", icon: "employees" },
   { path: "/quotes", label: "Quotes", icon: "quotes" },
   { path: "/jobs", label: "Jobs", icon: "jobs" },
 
