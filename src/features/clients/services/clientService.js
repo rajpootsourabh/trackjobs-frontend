@@ -7,7 +7,7 @@ import {
 
 class ClientService extends BaseApiService {
   constructor() {
-    super("clients", { requireVendorId: true });
+    super("clients");
   }
 
   async getAll(params = {}) {

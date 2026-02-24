@@ -1,5 +1,5 @@
 // src/pages/Jobs/JobDetails/index.jsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Grid, CircularProgress, Box, Typography, Button } from '@mui/material';
 import { useToast } from '../../../components/common/ToastProvider';
@@ -12,13 +12,17 @@ import ActivitySection from '../components/JobView/ActivitySection';
 import TasksSection from '../components/JobView/TasksSection';
 import InstructionsSection from '../components/JobView/InstructionsSection';
 import ConfirmDialog from '../../../components/common/ConfirmDialog';
-import { useState } from 'react';
 
 const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [localTasks, setLocalTasks] = useState([]);
+  const [localAttachments, setLocalAttachments] = useState({
+    general: [],
+    instructions: []
+  });
 
   const {
     currentJob,
@@ -31,8 +35,20 @@ const JobDetails = () => {
     deleteTask,
     addAttachment,
     deleteAttachment,
+    updateJob,
     clearCurrent,
   } = useJobs({ autoFetch: false });
+
+  // Update local state when currentJob changes
+  useEffect(() => {
+    if (currentJob) {
+      setLocalTasks(currentJob.tasks || []);
+      setLocalAttachments({
+        general: currentJob.attachments_by_context?.general || [],
+        instructions: currentJob.attachments_by_context?.instructions || []
+      });
+    }
+  }, [currentJob]);
 
   // Fetch job details
   useEffect(() => {
@@ -47,6 +63,15 @@ const JobDetails = () => {
 
   const handleEdit = () => {
     navigate(`/jobs/${id}/edit`);
+  };
+
+  const handleUpdateJob = async (data) => {
+    try {
+      await updateJob(id, data);
+      showToast('Job updated successfully', 'success');
+    } catch (error) {
+      // Error is already handled in the hook
+    }
   };
 
   const handleDelete = async () => {
@@ -72,7 +97,6 @@ const JobDetails = () => {
   const handleUpdateStatus = async (newStatus) => {
     try {
       await changeJobStatus(id, newStatus);
-      showToast(`Job status updated to ${newStatus.replace('_', ' ')}`, 'success');
     } catch (error) {
       // Error is already handled in the hook
     }
@@ -81,19 +105,20 @@ const JobDetails = () => {
   const handleAddTask = async (taskData) => {
     try {
       await addTask(id, taskData);
-      // Toast is shown in hook
+      // Refetch job to ensure we have the latest data
+      await getJob(id);
     } catch (error) {
       // Error is already handled in the hook
     }
   };
 
   const handleToggleTask = async (taskId) => {
-    if (!currentJob?.tasks) return;
-    
-    const task = currentJob.tasks.find(t => t.id === taskId);
+    const task = localTasks.find(t => t.id === taskId);
     if (task) {
       try {
         await toggleTask(id, taskId, task.completed);
+        // Refetch job to ensure we have the latest data
+        await getJob(id);
       } catch (error) {
         // Error is already handled in the hook
       }
@@ -103,14 +128,24 @@ const JobDetails = () => {
   const handleDeleteTask = async (taskId) => {
     try {
       await deleteTask(id, taskId);
+      // Update local state immediately
+      setLocalTasks(prev => prev.filter(t => t.id !== taskId));
     } catch (error) {
       // Error is already handled in the hook
     }
   };
 
+  const handleEditTask = async (taskId, taskData) => {
+    // If you have an edit task API endpoint, implement it here
+    // For now, we'll just show a toast
+    showToast('Edit task functionality coming soon', 'info');
+  };
+
   const handleAddGeneralAttachment = async (file) => {
     try {
       await addAttachment(id, file, file.name, { context: 'general' });
+      // Refetch job to ensure we have the latest data
+      await getJob(id);
     } catch (error) {
       // Error is already handled in the hook
     }
@@ -119,22 +154,27 @@ const JobDetails = () => {
   const handleAddInstructionAttachment = async (file) => {
     try {
       await addAttachment(id, file, file.name, { context: 'instructions' });
+      // Refetch job to ensure we have the latest data
+      await getJob(id);
     } catch (error) {
       // Error is already handled in the hook
     }
   };
 
   const handleDeleteAttachment = async (attachmentId) => {
-    if (!currentJob?.attachments_by_context) return;
-
     // Find which context the attachment belongs to
     let context = 'general';
-    if (currentJob.attachments_by_context.instructions?.some(a => a.id === attachmentId)) {
+    if (localAttachments.instructions.some(a => a.id === attachmentId)) {
       context = 'instructions';
     }
 
     try {
       await deleteAttachment(id, attachmentId, context);
+      // Update local state immediately
+      setLocalAttachments(prev => ({
+        ...prev,
+        [context]: prev[context].filter(a => a.id !== attachmentId)
+      }));
     } catch (error) {
       // Error is already handled in the hook
     }
@@ -152,7 +192,7 @@ const JobDetails = () => {
     }
   };
 
-  if (loading) {
+  if (loading && !currentJob) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '400px' }}>
         <CircularProgress />
@@ -160,7 +200,7 @@ const JobDetails = () => {
     );
   }
 
-  if (!currentJob) {
+  if (!currentJob && !loading) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
         <Typography variant="h6" gutterBottom>Job not found</Typography>
@@ -174,15 +214,15 @@ const JobDetails = () => {
   return (
     <>
       <PageHeader
-        title={currentJob.title}
+        title={currentJob?.title || ''}
         breadcrumb={[
           { label: 'Dashboard', path: '/dashboard' },
           { label: 'Jobs', path: '/jobs' },
-          { label: currentJob.job_number, current: true }
+          { label: currentJob?.job_number || '', current: true }
         ]}
         action={
           <JobActionMenu
-            status={currentJob.status}
+            status={currentJob?.status}
             onEdit={handleEdit}
             onDelete={() => setDeleteDialogOpen(true)}
             onPrint={handlePrint}
@@ -197,31 +237,33 @@ const JobDetails = () => {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid item xs={12} md={6}>
           <InstructionsSection
-            instructions={currentJob.instructions}
-            attachments={currentJob.attachments_by_context?.instructions || []}
+            instructions={currentJob?.instructions}
+            attachments={localAttachments.instructions}
             onAddAttachment={handleAddInstructionAttachment}
             onDeleteAttachment={handleDeleteAttachment}
             onDownload={handleDownloadAttachment}
+            onUpdate={handleUpdateJob}
             jobId={id}
           />
         </Grid>
         <Grid item xs={12} md={6}>
           <TasksSection
-            tasks={currentJob.tasks || []}
+            tasks={localTasks}
             onAddTask={handleAddTask}
             onToggleTask={handleToggleTask}
             onDeleteTask={handleDeleteTask}
+            onEditTask={handleEditTask}
           />
         </Grid>
       </Grid>
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
-          <ActivitySection activities={currentJob.activities || []} />
+          <ActivitySection activities={currentJob?.activities || []} />
         </Grid>
         <Grid item xs={12} md={6}>
           <AttachmentsSection
-            attachments={currentJob.attachments_by_context?.general || []}
+            attachments={localAttachments.general}
             onAddAttachment={() => document.getElementById('general-file-upload').click()}
             onDownload={handleDownloadAttachment}
             onPreview={handlePreviewAttachment}
@@ -241,6 +283,8 @@ const JobDetails = () => {
               handleAddGeneralAttachment(file);
             });
           }
+          // Reset input
+          e.target.value = '';
         }}
       />
 

@@ -19,19 +19,40 @@ export const API_ENDPOINTS = {
     resetPassword: "/api/auth/reset-password",
   },
   clients: {
-    base: "/api/clients",
-    get: (id) => `/api/clients/${id}`,
-    create: "/api/clients",
-    update: (id) => `/api/clients/${id}`,
-    delete: (id) => `/api/clients/${id}`,
+    base: "/api/v1/vendors/clients", // Updated path
+    get: (id) => `/api/v1/vendors/clients/${id}`, // Updated path
+    create: "/api/v1/vendors/clients", // Updated path
+    update: (id) => `/api/v1/vendors/clients/${id}`, // Updated path
+    delete: (id) => `/api/v1/vendors/clients/${id}`, // Updated path
   },
   quotes: {
-    base: "/api/quotes",
-    get: (id) => `/api/quotes/${id}`,
-    create: "/api/quotes",
-    update: (id) => `/api/quotes/${id}`,
-    delete: (id) => `/api/quotes/${id}`,
-    send: (id) => `/api/quotes/${id}/send`,
+    base: "/api/v1/vendors/quotes",
+    get: (id) => `/api/v1/vendors/quotes/${id}`,
+    create: "/api/v1/vendors/quotes",
+    update: (id) => `/api/v1/vendors/quotes/${id}`,
+    delete: (id) => `/api/v1/vendors/quotes/${id}`,
+    send: (id) => `/api/v1/vendors/quotes/${id}/send`,
   },
-  // Add other endpoints...
+  jobs: {
+    base: "/api/v1/vendors/jobs",
+    get: (id) => `/api/v1/vendors/jobs/${id}`,
+    create: "/api/v1/vendors/jobs",
+    update: (id) => `/api/v1/vendors/jobs/${id}`,
+    delete: (id) => `/api/v1/vendors/jobs/${id}`,
+    status: (id) => `/api/v1/vendors/jobs/${id}/status`,
+    number: (jobNumber) => `/api/v1/vendors/jobs/number/${jobNumber}`,
+    tasks: {
+      add: (jobId) => `/api/v1/vendors/jobs/${jobId}/tasks`,
+      toggle: (jobId, taskId) =>
+        `/api/v1/vendors/jobs/${jobId}/tasks/${taskId}/toggle`,
+      delete: (jobId, taskId) =>
+        `/api/v1/vendors/jobs/${jobId}/tasks/${taskId}`,
+    },
+    attachments: {
+      add: (jobId) => `/api/v1/vendors/jobs/${jobId}/attachments`,
+      delete: (jobId, attachmentId) =>
+        `/api/v1/vendors/jobs/${jobId}/attachments/${attachmentId}`,
+    },
+    statistics: "/api/v1/vendors/jobs/statistics",
+  },
 };

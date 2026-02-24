@@ -39,7 +39,7 @@ import {
 import SectionHeader from '../../../../components/common/form/SectionHeader';
 import EllipsisText from '../../../../components/common/EllipsisText';
 import { useToast } from '../../../../components/common/ToastProvider';
-import jobService from '../../services/jobService';
+import { useJobs } from '../../../jobs/hooks/useJobs'; // Import useJobs instead of direct service
 import { useParams } from 'react-router-dom';
 
 // Helper function to get icon based on file type
@@ -70,6 +70,7 @@ const InstructionsSection = ({
     const currentJobId = propJobId || urlId;
 
     const { showToast } = useToast();
+    const { updateJob } = useJobs({ autoFetch: false }); // Use the hook
     const textRef = useRef(null);
     const [isTruncated, setIsTruncated] = useState(false);
 
@@ -80,14 +81,11 @@ const InstructionsSection = ({
     const [instructions, setInstructions] = useState(initialInstructions);
     const [tempInstructions, setTempInstructions] = useState('');
     const [updating, setUpdating] = useState(false);
-    const [isHovering, setIsHovering] = useState(false);
 
     // State for attachments - use initialAttachments from props
     const [attachments, setAttachments] = useState(initialAttachments);
-    const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
-    const [showAttachments, setShowAttachments] = useState(false);
 
     // Update local state when props change
     useEffect(() => {
@@ -121,16 +119,45 @@ const InstructionsSection = ({
         setTempInstructions('');
     };
 
+    // In InstructionsSection.jsx - updated handleSave function
+
     const handleSave = async () => {
         if (!currentJobId) return;
 
         setUpdating(true);
         try {
-            await jobService.updateJob(currentJobId, { instructions: tempInstructions });
-            setInstructions(tempInstructions);
-            setEditDialogOpen(false);
-            showToast('Instructions updated successfully', 'success');
+            // Store current attachments before update
+            const currentAttachments = attachments;
 
+            // Use the updateJob from the hook
+            await updateJob(currentJobId, { instructions: tempInstructions });
+
+            // Update local state immediately
+            setInstructions(tempInstructions);
+
+            // CRITICAL: Restore attachments if they were cleared
+            // // Wait a bit and then check if attachments are still there
+            // setTimeout(async () => {
+            //     try {
+            //         // Fetch the latest job data
+            //         const refreshedJob = await getJob(currentJobId);
+            //         if (refreshedJob) {
+            //             // If attachments are missing in the response, restore them
+            //             if (!refreshedJob.attachments_by_context?.instructions ||
+            //                 refreshedJob.attachments_by_context.instructions.length === 0) {
+            //                 // Force restore attachments from our saved state
+            //                 setAttachments(currentAttachments);
+            //             }
+            //         }
+            //     } catch (err) {
+            //         console.error('Error refreshing job after update:', err);
+            //     }
+            // }, 500);
+
+            setEditDialogOpen(false);
+            // showToast('Instructions updated successfully', 'success');
+
+            // Call the onUpdate callback if provided
             if (onUpdate) {
                 onUpdate({ instructions: tempInstructions });
             }
@@ -241,8 +268,6 @@ const InstructionsSection = ({
                                 }
                             }
                         }}
-                        onMouseEnter={() => setIsHovering(true)}
-                        onMouseLeave={() => setIsHovering(false)}
                         onClick={handleEdit}
                     >
                         {hasInstructions ? (
@@ -360,32 +385,19 @@ const InstructionsSection = ({
                             startIcon={uploading ? <CircularProgress size={20} /> : <AttachFile />}
                             variant="outlined"
                             size="small"
-                            onClick={() => document.getElementById('file-upload-input').click()}
+                            onClick={() => document.getElementById('file-upload-input-instructions').click()}
                             disabled={uploading}
                             sx={{ textTransform: 'none' }}
                         >
                             {uploading ? 'Uploading...' : 'Attach Photos/Files'}
                         </Button>
-
-                        {showAttachments && (
-                            <Button
-                                startIcon={<AddPhotoAlternate />}
-                                variant="contained"
-                                size="small"
-                                onClick={() => document.getElementById('file-upload-input').click()}
-                                disabled={uploading}
-                                sx={{ textTransform: 'none' }}
-                            >
-                                Upload from Device
-                            </Button>
-                        )}
                     </Box>
                 )}
 
                 {/* Hidden file input - Always present but triggered by buttons */}
                 <input
                     type="file"
-                    id="file-upload-input"
+                    id="file-upload-input-instructions"
                     style={{ display: 'none' }}
                     multiple
                     onChange={handleFileUpload}
@@ -393,12 +405,8 @@ const InstructionsSection = ({
                 />
 
                 {/* Attachments Grid */}
-                {loading ? (
-                    <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-                        <CircularProgress />
-                    </Box>
-                ) : attachments.length > 0 ? (
-                    <Box sx={{ flex: 1 }}>
+                {attachments.length > 0 ? (
+                    <Box sx={{ flex: 1, mt: hasAttachments ? 2 : 0 }}>
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
                             <Typography variant="subtitle2" color="text.secondary">
                                 Recent Files ({attachments.length})
@@ -408,75 +416,106 @@ const InstructionsSection = ({
                             sx={{
                                 width: '100%',
                                 maxHeight: 300,
-                                gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))!important',
-                                gap: '8px!important'
+                                gap: '8px !important',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr)) !important'
                             }}
                             cols={4}
                             rowHeight={100}
                         >
-                            {attachments.map((item) => (
-                                <ImageListItem
-                                    key={item.id}
-                                    sx={{
-                                        cursor: 'pointer',
-                                        borderRadius: 1,
-                                        overflow: 'hidden',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        '&:hover': {
-                                            '& .image-overlay': {
-                                                opacity: 1
+                            {attachments.map((item) => {
+                                const imageItem = isImage(item);
+                                return (
+                                    <ImageListItem
+                                        key={item.id}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            borderRadius: 1,
+                                            overflow: 'hidden',
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            position: 'relative',
+                                            '&:hover': {
+                                                '& .image-overlay': {
+                                                    opacity: 1
+                                                }
                                             }
-                                        }
-                                    }}
-                                >
-                                    {isImage(item) ? (
-                                        <>
-                                            <img
-                                                src={item.url}
-                                                alt={item.file_name}
-                                                loading="lazy"
-                                                style={{
+                                        }}
+                                    >
+                                        {imageItem ? (
+                                            <>
+                                                <img
+                                                    src={item.url}
+                                                    alt={item.file_name}
+                                                    loading="lazy"
+                                                    style={{
+                                                        width: '100%',
+                                                        height: '100%',
+                                                        objectFit: 'cover',
+                                                        transition: 'transform 0.3s'
+                                                    }}
+                                                    onClick={() => handleImageClick(item)}
+                                                />
+                                                <ImageListItemBar
+                                                    title={item.file_name.length > 15 ? item.file_name.substring(0, 12) + '...' : item.file_name}
+                                                    subtitle={item.formatted_size}
+                                                    sx={{
+                                                        background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, transparent)',
+                                                        '& .MuiImageListItemBar-title': {
+                                                            fontSize: '0.65rem',
+                                                            whiteSpace: 'nowrap',
+                                                            overflow: 'hidden',
+                                                            textOverflow: 'ellipsis'
+                                                        },
+                                                        '& .MuiImageListItemBar-subtitle': {
+                                                            fontSize: '0.6rem'
+                                                        }
+                                                    }}
+                                                />
+                                            </>
+                                        ) : (
+                                            <Box
+                                                sx={{
                                                     width: '100%',
                                                     height: '100%',
-                                                    objectFit: 'cover',
-                                                    transition: 'transform 0.3s'
-                                                }}
-                                                onClick={() => handleImageClick(item)}
-                                            />
-                                            <ImageListItemBar
-                                                title={item.file_name.length > 15 ? item.file_name.substring(0, 12) + '...' : item.file_name}
-                                                subtitle={item.formatted_size}
-                                                sx={{
-                                                    background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 70%, transparent)',
-                                                    '& .MuiImageListItemBar-title': {
-                                                        fontSize: '0.65rem',
-                                                        whiteSpace: 'nowrap',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis'
-                                                    },
-                                                    '& .MuiImageListItemBar-subtitle': {
-                                                        fontSize: '0.6rem'
-                                                    }
-                                                }}
-                                            />
-                                            <Box
-                                                className="image-overlay"
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    right: 0,
-                                                    bottom: 0,
-                                                    bgcolor: 'rgba(0,0,0,0.5)',
                                                     display: 'flex',
+                                                    flexDirection: 'column',
                                                     alignItems: 'center',
                                                     justifyContent: 'center',
-                                                    gap: 0.5,
-                                                    opacity: 0,
-                                                    transition: 'opacity 0.2s'
+                                                    bgcolor: 'grey.100',
+                                                    p: 0.5,
+                                                    textAlign: 'center'
                                                 }}
                                             >
+                                                {getFileIcon(item.file_type, item.file_name)}
+                                                <Typography variant="caption" sx={{ mt: 0.5, fontSize: '0.6rem', wordBreak: 'break-word' }}>
+                                                    {item.file_name.length > 15 ? item.file_name.substring(0, 12) + '...' : item.file_name}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.55rem' }}>
+                                                    {item.formatted_size}
+                                                </Typography>
+                                            </Box>
+                                        )}
+
+                                        {/* Overlay for all files */}
+                                        <Box
+                                            className="image-overlay"
+                                            sx={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                right: 0,
+                                                bottom: 0,
+                                                bgcolor: 'rgba(0,0,0,0.5)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                gap: 0.5,
+                                                opacity: 0,
+                                                transition: 'opacity 0.2s',
+                                                zIndex: 1
+                                            }}
+                                        >
+                                            {imageItem && (
                                                 <Tooltip title="Preview">
                                                     <IconButton
                                                         size="small"
@@ -486,93 +525,29 @@ const InstructionsSection = ({
                                                         <Visibility fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
-                                                <Tooltip title="Download">
-                                                    <IconButton
-                                                        size="small"
-                                                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)' }}
-                                                        onClick={() => handleDownload(item.url, item.file_name)}
-                                                    >
-                                                        <Download fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Remove">
-                                                    <IconButton
-                                                        size="small"
-                                                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)' }}
-                                                        onClick={() => handleRemoveAttachment(item.id, item.file_name)}
-                                                    >
-                                                        <Delete fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
-                                        </>
-                                    ) : (
-                                        <Box
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                bgcolor: 'grey.100',
-                                                p: 0.5,
-                                                textAlign: 'center',
-                                                position: 'relative'
-                                            }}
-                                        >
-                                            {getFileIcon(item.file_type, item.file_name)}
-                                            <Typography variant="caption" sx={{ mt: 0.5, fontSize: '0.6rem', wordBreak: 'break-word' }}>
-                                                {item.file_name.length > 15 ? item.file_name.substring(0, 12) + '...' : item.file_name}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.55rem' }}>
-                                                {item.formatted_size}
-                                            </Typography>
-
-                                            {/* Overlay for non-image files */}
-                                            <Box
-                                                className="image-overlay"
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 0,
-                                                    left: 0,
-                                                    right: 0,
-                                                    bottom: 0,
-                                                    bgcolor: 'rgba(0,0,0,0.5)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    gap: 0.5,
-                                                    opacity: 0,
-                                                    transition: 'opacity 0.2s',
-                                                    '&:hover': {
-                                                        opacity: 1
-                                                    }
-                                                }}
-                                            >
-                                                <Tooltip title="Download">
-                                                    <IconButton
-                                                        size="small"
-                                                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)' }}
-                                                        onClick={() => handleDownload(item.url, item.file_name)}
-                                                    >
-                                                        <Download fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                                <Tooltip title="Remove">
-                                                    <IconButton
-                                                        size="small"
-                                                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)' }}
-                                                        onClick={() => handleRemoveAttachment(item.id, item.file_name)}
-                                                    >
-                                                        <Delete fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Box>
+                                            )}
+                                            <Tooltip title="Download">
+                                                <IconButton
+                                                    size="small"
+                                                    sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)' }}
+                                                    onClick={() => handleDownload(item.url, item.file_name)}
+                                                >
+                                                    <Download fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                            <Tooltip title="Remove">
+                                                <IconButton
+                                                    size="small"
+                                                    sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)' }}
+                                                    onClick={() => handleRemoveAttachment(item.id, item.file_name)}
+                                                >
+                                                    <Delete fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
                                         </Box>
-                                    )}
-                                </ImageListItem>
-                            ))}
+                                    </ImageListItem>
+                                );
+                            })}
                         </ImageList>
                     </Box>
                 ) : (
@@ -592,6 +567,7 @@ const InstructionsSection = ({
                             border: '2px dashed',
                             borderColor: 'grey.300',
                             minHeight: 120,
+                            mt: 2,
                             '&:hover': {
                                 bgcolor: 'grey.100',
                                 borderColor: 'primary.main',
@@ -601,7 +577,7 @@ const InstructionsSection = ({
                                 }
                             }
                         }}
-                        onClick={() => document.getElementById('file-upload-input').click()}
+                        onClick={() => document.getElementById('file-upload-input-instructions').click()}
                     >
                         <AttachFile
                             className="upload-icon"
@@ -695,7 +671,7 @@ const InstructionsSection = ({
                                     startIcon={uploading ? <CircularProgress size={20} /> : <AttachFile />}
                                     variant="outlined"
                                     size="small"
-                                    onClick={() => document.getElementById('dialog-file-upload').click()}
+                                    onClick={() => document.getElementById('dialog-file-upload-instructions').click()}
                                     disabled={uploading}
                                     sx={{ textTransform: 'none' }}
                                 >
@@ -704,7 +680,7 @@ const InstructionsSection = ({
                             </Box>
                             <input
                                 type="file"
-                                id="dialog-file-upload"
+                                id="dialog-file-upload-instructions"
                                 style={{ display: 'none' }}
                                 multiple
                                 onChange={handleFileUpload}

@@ -5,35 +5,21 @@ class BaseApiService {
   constructor(resource, options = {}) {
     this.resource = resource;
     this.client = httpClient;
-    this.requireVendorId = options.requireVendorId || false; // Whether URL needs {vendorId}
-    this.vendorIdInPath = options.vendorIdInPath || false; // Whether to include vendorId in path
   }
 
-  // Get vendor ID from localStorage or store
-  getVendorId() {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    return user?.vendor_id;
-  }
+  // // Get vendor ID from localStorage or store
+  // getVendorId() {
+  //   const user = JSON.parse(localStorage.getItem("user") || "{}");
+  //   return user?.vendor_id;
+  // }
 
   // Build URL based on resource type
   buildUrl(path = "") {
-    const vendorId = this.getVendorId();
-    
-    // If resource requires vendorId in URL (like clients)
-    if (this.requireVendorId) {
-      if (!vendorId) {
-        throw new Error("Vendor ID not found");
-      }
-      return `/api/v1/vendors/${vendorId}${path}`;
-    }
-    
-    // If resource is under vendors prefix but without ID (like quotes)
-    if (this.vendorIdInPath) {
+    // Remove the duplicate resource by checking if path already starts with the resource
+    if (path.startsWith(`/${this.resource}`)) {
       return `/api/v1/vendors${path}`;
     }
-    
-    // Default: no vendor prefix
-    return `/api/v1${path}`;
+    return `/api/v1/vendors/${this.resource}${path}`;
   }
 
   // CRUD operations

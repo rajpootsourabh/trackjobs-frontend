@@ -6,7 +6,7 @@ import {
 
 class JobService extends BaseApiService {
   constructor() {
-    super("jobs", { vendorIdInPath: true });
+    super("jobs");
   }
 
   async getAll(params = {}) {
