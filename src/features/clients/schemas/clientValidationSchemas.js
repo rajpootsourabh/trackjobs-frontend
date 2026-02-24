@@ -1,124 +1,156 @@
 // features/clients/schemas/clientValidationSchemas.js
-import * as Yup from 'yup';
+import * as Yup from "yup";
 
 const commonContactSchema = {
-  email: Yup.string().email('Invalid email').required('Email is required'),
-  mobile_number: Yup.string().required('Mobile number is required'),
+  email: Yup.string().email("Invalid email").required("Email is required"),
+  mobile_number: Yup.string().required("Mobile number is required"),
   alternate_mobile_number: Yup.string(),
 };
 
 const commonAddressSchema = {
-  address_line_1: Yup.string().required('Address line 1 is required'),
+  address_line_1: Yup.string().required("Address line 1 is required"),
   address_line_2: Yup.string(),
-  city: Yup.string().required('City is required'),
-  state: Yup.string().required('State is required'),
-  country: Yup.string().required('Country is required'),
-  zip_code: Yup.string().required('Zip code is required'),
+  city: Yup.string().required("City is required"),
+  state: Yup.string().required("State is required"),
+  country: Yup.string().required("Country is required"),
+  zip_code: Yup.string().required("Zip code is required"),
 };
 
 // Availability Schedule Schema (nested)
 const availabilityScheduleSchema = Yup.object().shape({
   available_days: Yup.array()
-    .min(1, 'Select at least one available day')
-    .required('Available days are required'),
-  
+    .min(1, "Select at least one available day")
+    .required("Available days are required"),
+
   preferred_start_time: Yup.string()
-    .required('Preferred start time is required')
-    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
-  
+    .required("Preferred start time is required")
+    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
+
   preferred_end_time: Yup.string()
-    .required('Preferred end time is required')
-    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format')
-    .test('is-after-start', 'End time must be after start time', function(value) {
-      const { preferred_start_time } = this.parent;
-      if (!preferred_start_time || !value) return true;
-      return value > preferred_start_time;
-    }),
-  
+    .required("Preferred end time is required")
+    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format")
+    .test(
+      "is-after-start",
+      "End time must be after start time",
+      function (value) {
+        const { preferred_start_time } = this.parent;
+        if (!preferred_start_time || !value) return true;
+        return value > preferred_start_time;
+      },
+    ),
+
   has_lunch_break: Yup.boolean().required(),
-  
-  lunch_start: Yup.string()
-    .when('has_lunch_break', {
-      is: true,
-      then: (schema) => schema
-        .required('Lunch start time is required')
-        .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
-      otherwise: (schema) => schema.nullable(),
-    }),
-  
-  lunch_end: Yup.string()
-    .when('has_lunch_break', {
-      is: true,
-      then: (schema) => schema
-        .required('Lunch end time is required')
-        .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format')
-        .test('is-after-start', 'Lunch end time must be after start time', function(value) {
-          const { lunch_start } = this.parent;
-          if (!lunch_start || !value) return true;
-          return value > lunch_start;
-        }),
-      otherwise: (schema) => schema.nullable(),
-    }),
-  
+
+  lunch_start: Yup.string().when("has_lunch_break", {
+    is: true,
+    then: (schema) =>
+      schema
+        .required("Lunch start time is required")
+        .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
+    otherwise: (schema) => schema.nullable(),
+  }),
+
+  lunch_end: Yup.string().when("has_lunch_break", {
+    is: true,
+    then: (schema) =>
+      schema
+        .required("Lunch end time is required")
+        .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format")
+        .test(
+          "is-after-start",
+          "Lunch end time must be after start time",
+          function (value) {
+            const { lunch_start } = this.parent;
+            if (!lunch_start || !value) return true;
+            return value > lunch_start;
+          },
+        ),
+    otherwise: (schema) => schema.nullable(),
+  }),
+
   notes: Yup.string().nullable(),
 });
 
 export const clientValidationSchema = (clientType) => {
   const baseSchema = {
-    client_type: Yup.string().required('Client type is required'),
-    
+    client_type: Yup.string().required("Client type is required"),
+
     // Common fields
     ...commonContactSchema,
     ...commonAddressSchema,
-    
+
     // Availability Schedule - Now required as a nested object
-    availability_schedule: availabilityScheduleSchema.required('Availability schedule is required'),
-    
+    availability_schedule: availabilityScheduleSchema.required(
+      "Availability schedule is required",
+    ),
+    service_category: Yup.string().required('Service category is required'),
+
     // Commercial/Residential specific fields will be added below
   };
 
-  if (clientType === 'commercial') {
+  if (clientType === "commercial") {
     return Yup.object({
       ...baseSchema,
-      business_name: Yup.string().required('Business name is required'),
+      business_name: Yup.string().required("Business name is required"),
       business_type: Yup.string()
-        .required('Business type is required')
-        .test('not-empty', 'Business type is required', value => value && value !== ''),
+        .required("Business type is required")
+        .test(
+          "not-empty",
+          "Business type is required",
+          (value) => value && value !== "",
+        ),
       industry: Yup.string()
-        .required('Industry is required')
-        .test('not-empty', 'Industry is required', value => value && value !== ''),
+        .required("Industry is required")
+        .test(
+          "not-empty",
+          "Industry is required",
+          (value) => value && value !== "",
+        ),
       business_registration_number: Yup.string().nullable(),
-      contact_person_name: Yup.string().required('Contact person name is required'),
+      contact_person_name: Yup.string().required(
+        "Contact person name is required",
+      ),
       designation: Yup.string()
-        .required('Designation is required')
-        .test('not-empty', 'Designation is required', value => value && value !== ''),
+        .required("Designation is required")
+        .test(
+          "not-empty",
+          "Designation is required",
+          (value) => value && value !== "",
+        ),
       billing_name: Yup.string().nullable(),
       payment_term: Yup.string()
-        .required('Payment term is required')
-        .test('not-empty', 'Payment term is required', value => value && value !== ''),
+        .required("Payment term is required")
+        .test(
+          "not-empty",
+          "Payment term is required",
+          (value) => value && value !== "",
+        ),
       preferred_currency: Yup.string()
-        .required('Currency is required')
-        .test('not-empty', 'Currency is required', value => value && value !== ''),
+        .required("Currency is required")
+        .test(
+          "not-empty",
+          "Currency is required",
+          (value) => value && value !== "",
+        ),
       tax_percentage: Yup.number()
         .transform((value, originalValue) => {
-          return originalValue === '' ? null : value;
+          return originalValue === "" ? null : value;
         })
         .nullable()
-        .min(0, 'Tax percentage cannot be negative')
-        .max(100, 'Tax percentage cannot exceed 100'),
+        .min(0, "Tax percentage cannot be negative")
+        .max(100, "Tax percentage cannot exceed 100"),
       website_url: Yup.string()
-        .url('Invalid URL format')
+        .url("Invalid URL format")
         .nullable()
-        .transform(value => value === '' ? null : value),
+        .transform((value) => (value === "" ? null : value)),
       remove_logo: Yup.boolean(),
-      client_category: Yup.string().nullable(),
       notes: Yup.string().nullable(),
     });
   } else {
     // residential
     return Yup.object({
       ...baseSchema,
-      first_name: Yup.string().required('First name is required'),
+      first_name: Yup.string().required("First name is required"),
       last_name: Yup.string().nullable(),
     });
   }

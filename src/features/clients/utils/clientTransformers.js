@@ -45,7 +45,7 @@ export const transformClientFromApi = (apiClient) => {
     logo_url: apiClient.logo?.url || apiClient.logo_path,
     logo_temp_id: null,
     remove_logo: false,
-    client_category: apiClient.client_category || "",
+    service_category: apiClient.service_category || "",
     notes: apiClient.notes || "",
     status: apiClient.status || "active",
     
@@ -118,7 +118,7 @@ export const transformClientForApi = (formData) => {
     
     // Additional flat fields
     website_url: formData.website_url,
-    client_category: formData.client_category,
+    service_category: formData.service_category,
     notes: formData.notes,
   };
 

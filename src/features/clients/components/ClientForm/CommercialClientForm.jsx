@@ -13,10 +13,12 @@ import {
   PAYMENT_TERM_OPTIONS,
   CURRENCY_OPTIONS,
   TAX_PERCENTAGE_OPTIONS,
-  CLIENT_CATEGORY_OPTIONS
+  getCategoryOptionsByClientType
 } from '../../constants/clientConstants';
 
 const CommercialClientForm = ({ formik, mode = 'create' }) => {
+
+  const categoryOptions = getCategoryOptionsByClientType('commercial');
   // Add this debug effect
   useEffect(() => {
     console.log('📋 CommercialClientForm - Formik State:', {
@@ -409,14 +411,15 @@ const CommercialClientForm = ({ formik, mode = 'create' }) => {
 
           <Grid item xs={12} md={6}>
             <DebouncedSelect
-              name="client_category"
-              label="Client Category"
-              value={formik.values.client_category}
-              onChange={(value) => formik.setFieldValue('client_category', value)}
-              options={CLIENT_CATEGORY_OPTIONS}
-              error={formik.touched.client_category && formik.errors.client_category}
-              helperText={formik.touched.client_category && formik.errors.client_category}
+              name="service_category"
+              label="Service Category"
+              value={formik.values.service_category}
+              onChange={(value) => formik.setFieldValue('service_category', value)}
+              options={categoryOptions}
+              error={formik.touched.service_category && formik.errors.service_category}
+              helperText={formik.touched.service_category && formik.errors.service_category}
               fullWidth
+              required
             />
           </Grid>
 

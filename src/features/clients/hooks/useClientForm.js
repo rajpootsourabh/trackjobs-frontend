@@ -5,21 +5,16 @@ import { WEEKDAYS, WEEKEND_DAYS, ALL_DAYS } from '../constants/clientConstants';
 export const useClientForm = (formik) => {
   const [clientType, setClientType] = useState('commercial');
 
-  const handleDayToggle = (dayValue) => {
-    const currentDays = formik.values.availability_schedule?.available_days || [];
-    
-    if (currentDays.includes(dayValue)) {
-      formik.setFieldValue(
-        'availability_schedule.available_days', 
-        currentDays.filter(d => d !== dayValue)
-      );
-    } else {
-      formik.setFieldValue(
-        'availability_schedule.available_days', 
-        [...currentDays, dayValue]
-      );
-    }
-  };
+const handleDayToggle = (dayValue) => {
+  const currentDays = formik.values.availability_schedule?.available_days || [];
+  const newDays = currentDays.includes(dayValue)
+    ? currentDays.filter(d => d !== dayValue)
+    : [...currentDays, dayValue];
+
+  formik.setFieldValue('availability_schedule.available_days', newDays);
+  // Force validation immediately
+  formik.validateField('availability_schedule.available_days');
+};
 
   const handleSelectWeekdays = () => {
     const currentDays = formik.values.availability_schedule?.available_days || [];

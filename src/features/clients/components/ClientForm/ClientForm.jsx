@@ -25,7 +25,7 @@ const ClientForm = ({
   useEffect(() => {
     console.log('isLoading changed:', isLoading);
   }, [isLoading]);
-  
+
   // Merge initial values with client_type
   const mergedInitialValues = {
     ...INITIAL_CLIENT_VALUES,
@@ -36,10 +36,10 @@ const ClientForm = ({
   // Unified submit handler that handles both actions
   const handleFormSubmit = async (values, formikHelpers) => {
     const { setSubmitting, validateForm } = formikHelpers;
-    
+
     // Get the action from the values (set by the button click)
     const action = values._action || 'save';
-    
+
     // Remove the temporary _action field
     const { _action, ...submitValues } = values;
 
@@ -85,23 +85,23 @@ const ClientForm = ({
       enableReinitialize
       validateOnChange={true}
       validateOnBlur={true}
-      validate={(values) => {
-        // This will run on every change
-        console.log("🔄 Validating values:", values);
-        try {
-          const schema = clientValidationSchema(clientType);
-          schema.validateSync(values, { abortEarly: false });
-          console.log("✅ Validation passed");
-          return {};
-        } catch (err) {
-          const errors = {};
-          err.inner.forEach((error) => {
-            errors[error.path] = error.message;
-            console.log(`❌ Field ${error.path}: ${error.message}`);
-          });
-          return errors;
-        }
-      }}
+    // validate={(values) => {
+    //   // This will run on every change
+    //   console.log("🔄 Validating values:", values);
+    //   try {
+    //     const schema = clientValidationSchema(clientType);
+    //     schema.validateSync(values, { abortEarly: false });
+    //     console.log("✅ Validation passed");
+    //     return {};
+    //   } catch (err) {
+    //     const errors = {};
+    //     err.inner.forEach((error) => {
+    //       errors[error.path] = error.message;
+    //       console.log(`❌ Field ${error.path}: ${error.message}`);
+    //     });
+    //     return errors;
+    //   }
+    // }}
     >
       {(formikProps) => (
         <Form>
@@ -128,7 +128,7 @@ const ClientForm = ({
             <AvailabilitySchedule
               formik={formikProps}
               mode={mode}
-              sectionNumber={clientType === 'commercial' ? '6' : '4'}  // Commercial has 5 sections, Residential has 3
+              sectionNumber={clientType === 'commercial' ? '6' : '5'}
             />
 
             <FormActions

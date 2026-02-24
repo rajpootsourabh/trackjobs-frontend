@@ -54,7 +54,7 @@ const ClientTableRow = ({ client, isSelected, onSelect }) => {
     const position = client.designation || 'N/A';
     const email = client.email || 'N/A';
     const phone = client.mobile_number || 'N/A';
-    const category = client.client_category || 'regular';
+    const category = client.service_category || 'regular';
     const status = client.status || 'active';
     const clientType = client.client_type || 'commercial';
 

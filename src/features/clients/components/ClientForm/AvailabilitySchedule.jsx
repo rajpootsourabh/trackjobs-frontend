@@ -28,10 +28,10 @@ const AvailabilitySchedule = ({ formik, sectionNumber = '6' }) => {  // Default 
   };
 
   const isAllDaysSelected = formik.values.availability_schedule?.available_days?.length === ALL_DAYS.length;
-  const isWeekdaysSelected = WEEKDAYS.every(day => 
+  const isWeekdaysSelected = WEEKDAYS.every(day =>
     formik.values.availability_schedule?.available_days?.includes(day)
   );
-  const isWeekendSelected = WEEKEND_DAYS.every(day => 
+  const isWeekendSelected = WEEKEND_DAYS.every(day =>
     formik.values.availability_schedule?.available_days?.includes(day)
   );
 
@@ -44,9 +44,6 @@ const AvailabilitySchedule = ({ formik, sectionNumber = '6' }) => {  // Default 
 
   // Error for available days (array field)
   const availableDaysError = getNestedError('availability_schedule.available_days');
-  
-  // Error for the entire schedule (if needed)
-  const scheduleError = getNestedError('availability_schedule');
 
   return (
     <Paper
@@ -75,11 +72,11 @@ const AvailabilitySchedule = ({ formik, sectionNumber = '6' }) => {  // Default 
             flexWrap: 'wrap',
             gap: 1
           }}>
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                color: availableDaysError ? 'error.main' : 'text.secondary', 
-                fontWeight: 500 
+            <Typography
+              variant="body2"
+              sx={{
+                color: availableDaysError ? 'error.main' : 'text.secondary',
+                fontWeight: 500
               }}
             >
               Available Days {availableDaysError && '*'}
@@ -159,7 +156,7 @@ const AvailabilitySchedule = ({ formik, sectionNumber = '6' }) => {  // Default 
                     onChange={() => {
                       handleDayToggle(day.value);
                       // Mark as touched when user interacts
-                      formik.setFieldTouched('availability_schedule.available_days', true);
+                      formik.setFieldTouched('availability_schedule.available_days', false);
                     }}
                     name={`availability_schedule.available_days.${day.value}`}
                     size="small"

@@ -89,7 +89,7 @@ export const STATE_OPTIONS = [
   { value: "washington", label: "Washington" },
   { value: "west_virginia", label: "West Virginia" },
   { value: "wisconsin", label: "Wisconsin" },
-  { value: "wyoming", label: "Wyoming" }
+  { value: "wyoming", label: "Wyoming" },
 ];
 
 export const COUNTRY_OPTIONS = [
@@ -125,16 +125,55 @@ export const TAX_PERCENTAGE_OPTIONS = [
   { value: "28", label: "28%" }, // Added
 ];
 
-export const CLIENT_CATEGORY_OPTIONS = [
-  { value: "new", label: "New Client" },
-  { value: "regular", label: "Regular" }, // Added
-  { value: "existing", label: "Existing Client" },
-  { value: "vip", label: "VIP Client" },
-  { value: "strategic", label: "Strategic Partner" }, // Added
-  { value: "at_risk", label: "At Risk" }, // Added
+export const RESIDENTIAL_CATEGORY_OPTIONS = [
+  { value: "handyman", label: "Handyman Services" },
+  { value: "plumbing", label: "Plumbing Services" },
+  { value: "electrical", label: "Electrical Services" },
+  { value: "hvac", label: "HVAC Services" },
+  { value: "home_cleaning", label: "Home Cleaning Services" },
+  { value: "roof_repair", label: "Roof Repair Services" },
+  { value: "home_renovation", label: "Home Renovation Services" },
+  { value: "landscaping", label: "Landscaping Services" },
+  { value: "pest_control", label: "Pest Control Services" },
+  { value: "appliance_repair", label: "Appliance Repair Services" },
+  { value: "flooring", label: "Flooring Installation Services" },
+  { value: "painting", label: "Painting Services" },
+  { value: "window_glass", label: "Window and Glass Services" },
+  { value: "home_security", label: "Home Security Installation" },
+  { value: "pool_maintenance", label: "Pool Maintenance Services" },
 ];
 
-export const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"];
+export const COMMERCIAL_CATEGORY_OPTIONS = [
+  { value: "commercial_plumbing", label: "Commercial Plumbing Services" },
+  { value: "commercial_electrical", label: "Commercial Electrical Services" },
+  { value: "commercial_hvac", label: "Commercial HVAC Services" },
+  { value: "commercial_cleaning", label: "Commercial Cleaning Services" },
+  { value: "commercial_roofing", label: "Commercial Roofing Services" },
+  { value: "office_renovation", label: "Office Renovation Services" },
+  { value: "commercial_landscaping", label: "Commercial Landscaping Services" },
+  { value: "fire_protection", label: "Fire Protection Services" },
+  { value: "commercial_security", label: "Commercial Security Systems" },
+  { value: "elevator_maintenance", label: "Elevator Maintenance Services" },
+  { value: "industrial_equipment", label: "Industrial Equipment Maintenance" },
+  { value: "commercial_flooring", label: "Commercial Flooring Services" },
+  { value: "signage_installation", label: "Signage Installation Services" },
+  { value: "it_network", label: "IT and Network Services" },
+  { value: "facility_management", label: "Facility Management Services" },
+];
+
+export const getCategoryOptionsByClientType = (clientType) => {
+  return clientType === "commercial"
+    ? COMMERCIAL_CATEGORY_OPTIONS
+    : RESIDENTIAL_CATEGORY_OPTIONS;
+};
+
+export const WEEKDAYS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+];
 export const WEEKEND_DAYS = ["saturday", "sunday"];
 export const ALL_DAYS = [...WEEKDAYS, ...WEEKEND_DAYS];
 
@@ -171,9 +210,9 @@ export const INITIAL_CLIENT_VALUES = {
   website_url: "",
   logo_temp_id: null,
   remove_logo: false,
-  client_category: "regular",
+  service_category: "",
   notes: "",
-  
+
   // availability - will be transformed in transformer
   availability_schedule: {
     available_days: [],
