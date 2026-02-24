@@ -61,18 +61,30 @@ const ResidentialClientForm = ({ formik }) => {
         </Grid>
       </Paper>
 
-      <Paper elevation={0} sx={{ p: 0, mb: 4, borderRadius: 2, backgroundColor: '#fff' }}>
+      <Paper
+        elevation={0}
+        sx={{ p: 0, mb: 4, borderRadius: 2, backgroundColor: '#fff' }}
+      >
         <SectionHeader number="4" title="Service Category" />
-        <Grid container spacing={3}>
+
+        <Grid container spacing={1} sx={{ mt: 2 }}>
           <Grid item xs={12} md={6}>
             <DebouncedSelect
               name="service_category"
               label="Service Category"
               value={formik.values.service_category}
-              onChange={(value) => formik.setFieldValue('service_category', value)}
+              onChange={(value) =>
+                formik.setFieldValue('service_category', value)
+              }
               options={categoryOptions}
-              error={formik.touched.service_category && formik.errors.service_category}
-              helperText={formik.touched.service_category && formik.errors.service_category}
+              error={
+                formik.touched.service_category &&
+                formik.errors.service_category
+              }
+              helperText={
+                formik.touched.service_category &&
+                formik.errors.service_category
+              }
               fullWidth
               required
             />
