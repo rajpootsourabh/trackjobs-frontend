@@ -16,6 +16,8 @@ const EmployeeTable = ({
     onPageChange,
     onRowsPerPageChange,
     showPagination = false,
+    onEdit, // 👈 Add this prop
+    onDelete, // 👈 Add this prop
 }) => {
 
     const emptyRows = itemsPerPage - employees.length;
@@ -44,6 +46,8 @@ const EmployeeTable = ({
                                 employee={employee}
                                 isSelected={selectedEmployees.includes(employee.id)}
                                 onSelect={onSelectEmployee}
+                                onEdit={onEdit} // 👈 Pass to row
+                                onDelete={onDelete} // 👈 Pass to row
                             />
                         ))}
 

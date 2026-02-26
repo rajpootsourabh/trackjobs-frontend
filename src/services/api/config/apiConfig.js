@@ -55,4 +55,21 @@ export const API_ENDPOINTS = {
     },
     statistics: "/api/v1/vendors/jobs/statistics",
   },
+  employees: {
+    base: "/api/v1/vendors/employees",
+    get: (id) => `/api/v1/vendors/employees/${id}`,
+    create: "/api/v1/vendors/employees",
+    update: (id) => `/api/v1/vendors/employees/${id}`,
+    delete: (id) => `/api/v1/vendors/employees/${id}`,
+    statistics: "/api/v1/vendors/employees/statistics",
+    hierarchy: "/api/v1/vendors/employees/hierarchy",
+    byDepartment: (department) =>
+      `/api/v1/vendors/employees/department/${department}`,
+    byDesignation: (designation) =>
+      `/api/v1/vendors/employees/designation/${designation}`,
+    subordinates: (employeeId) =>
+      `/api/v1/vendors/employees/${employeeId}/subordinates`,
+    managers: "/api/v1/vendors/employees/managers/options",
+    
+  },
 };

@@ -479,7 +479,7 @@ const jobSlice = createSlice({
         if (state.currentJob?.id === action.payload.id) {
           state.currentJob = action.payload;
         }
-        state.success = "Job updated successfully";
+        //state.success = "Job updated successfully";
       })
       .addCase(updateJob.rejected, (state, action) => {
         state.loading = false;

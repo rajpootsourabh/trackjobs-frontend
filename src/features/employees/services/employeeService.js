@@ -1,0 +1,138 @@
+// features/employees/services/employeeService.js
+import BaseApiService from "../../../services/api/baseApiService";
+import {
+  transformEmployeeFromApi,
+  transformEmployeeForApi,
+} from "../utils/employeeTransformers";
+import { API_ENDPOINTS } from "../../../services/api/config/apiConfig";
+
+class EmployeeService extends BaseApiService {
+  constructor() {
+    super("employees");
+    // Override base endpoints with vendor-specific paths
+    this.endpoints = {
+      ...this.endpoints,
+      base: API_ENDPOINTS.employees.base,
+      get: API_ENDPOINTS.employees.get,
+      create: API_ENDPOINTS.employees.create,
+      update: API_ENDPOINTS.employees.update,
+      delete: API_ENDPOINTS.employees.delete,
+    };
+
+    // Add abort controllers
+    this.managersController = null;
+    this.employeesController = null;
+  }
+
+  async getAll(params = {}) {
+    // Cancel previous request if any
+    if (this.employeesController) {
+      this.employeesController.abort();
+    }
+
+    this.employeesController = new AbortController();
+
+    try {
+      const response = await super.getAll({
+        ...params,
+        signal: this.employeesController.signal,
+      });
+
+      return {
+        data: response.data.map(transformEmployeeFromApi),
+        pagination: {
+          total: response.meta.total,
+          perPage: response.meta.per_page,
+          currentPage: response.meta.current_page,
+          totalPages: response.meta.total_pages,
+        },
+      };
+    } catch (error) {
+      if (error.name === "AbortError") {
+        console.log("Previous request cancelled");
+        return { data: [], pagination: {} };
+      }
+      throw error;
+    }
+  }
+
+  async getById(id) {
+    const response = await super.getById(id);
+    return transformEmployeeFromApi(response.data);
+  }
+
+  async create(data) {
+    const apiData = transformEmployeeForApi(data);
+    const response = await super.create(apiData);
+    return transformEmployeeFromApi(response.data);
+  }
+
+  async update(id, data) {
+    const apiData = transformEmployeeForApi(data);
+    const response = await super.update(id, apiData);
+    return transformEmployeeFromApi(response.data);
+  }
+
+  async delete(id) {
+    return await super.delete(id);
+  }
+
+  async getHierarchy() {
+    const response = await this.client.get(API_ENDPOINTS.employees.hierarchy);
+    return response.data;
+  }
+
+  async getStatistics() {
+    const response = await this.client.get(API_ENDPOINTS.employees.statistics);
+    return response.data;
+  }
+
+  async getByDepartment(department) {
+    const response = await this.client.get(
+      API_ENDPOINTS.employees.byDepartment(department),
+    );
+    return response.data.map(transformEmployeeFromApi);
+  }
+
+  async getByDesignation(designation) {
+    const response = await this.client.get(
+      API_ENDPOINTS.employees.byDesignation(designation),
+    );
+    return response.data.map(transformEmployeeFromApi);
+  }
+
+  async getSubordinates(employeeId) {
+    const response = await this.client.get(
+      API_ENDPOINTS.employees.subordinates(employeeId),
+    );
+    return response.data.map(transformEmployeeFromApi);
+  }
+
+  // Updated with AbortController
+  async getManagers(params = {}, signal = null) {
+    // Cancel previous request if any
+    if (this.managersController && !signal) {
+      this.managersController.abort();
+    }
+
+    if (!signal) {
+      this.managersController = new AbortController();
+      signal = this.managersController.signal;
+    }
+
+    try {
+      const response = await this.client.get(API_ENDPOINTS.employees.managers, {
+        params,
+        signal,
+      });
+      return response.data;
+    } catch (error) {
+      if (error.name === "AbortError" || error.code === "ERR_CANCELED") {
+        return { data: [] };
+      }
+      throw error;
+    }
+  }
+}
+
+export default new EmployeeService();

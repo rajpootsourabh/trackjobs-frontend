@@ -19,10 +19,11 @@ import {
   RadioGroup,
   FormControlLabel,
   FormLabel,
-  Fade // 👈 Add this import
+  Fade
 } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import DebouncedTextField from "../../../../components/common/form/DebouncedTextField";
+import DebouncedSelect from "../../../../components/common/form/DebouncedSelect"; // 👈 Add this import
 
 const AddEmployeeModal = ({ open, onClose }) => {
   const [form, setForm] = useState({
@@ -41,6 +42,30 @@ const AddEmployeeModal = ({ open, onClose }) => {
     active: true,
   });
 
+  // Mock options for dropdowns - replace with actual data from API
+  const designationOptions = [
+    { value: "software_engineer", label: "Software Engineer" },
+    { value: "senior_engineer", label: "Senior Engineer" },
+    { value: "tech_lead", label: "Tech Lead" },
+    { value: "manager", label: "Manager" },
+    { value: "director", label: "Director" },
+  ];
+
+  const departmentOptions = [
+    { value: "engineering", label: "Engineering" },
+    { value: "hr", label: "Human Resources" },
+    { value: "finance", label: "Finance" },
+    { value: "marketing", label: "Marketing" },
+    { value: "sales", label: "Sales" },
+  ];
+
+  const reportingManagerOptions = [
+    { value: "john", label: "John Doe" },
+    { value: "jane", label: "Jane Smith" },
+    { value: "mike", label: "Mike Johnson" },
+    { value: "sarah", label: "Sarah Williams" },
+  ];
+
   const handleChange = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   }, []);
@@ -56,8 +81,8 @@ const AddEmployeeModal = ({ open, onClose }) => {
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      TransitionComponent={Fade} // 👈 Add this for fade effect
-      transitionDuration={300} // 👈 Optional: control animation speed (in ms)
+      TransitionComponent={Fade}
+      transitionDuration={300}
       PaperProps={{
         sx: {
           borderRadius: 3,
@@ -82,8 +107,8 @@ const AddEmployeeModal = ({ open, onClose }) => {
 
       <Divider />
 
-      <DialogContent 
-        sx={{ 
+      <DialogContent
+        sx={{
           mt: 0,
           maxHeight: '70vh',
           overflow: 'auto',
@@ -209,37 +234,39 @@ const AddEmployeeModal = ({ open, onClose }) => {
 
           <Grid container spacing={2}>
             <Grid item xs={6}>
-              <DebouncedTextField
+              <DebouncedSelect
                 label="Designation"
-                placeholder="Enter Designation"
+                placeholder="Select Designation"
                 value={form.designation}
                 onChange={(val) => handleChange("designation", val)}
+                options={designationOptions}
+                fullWidth
+                size="medium"
               />
             </Grid>
 
             <Grid item xs={6}>
-              <DebouncedTextField
+              <DebouncedSelect
                 label="Department"
-                placeholder="Enter department"
+                placeholder="Select Department"
                 value={form.department}
                 onChange={(val) => handleChange("department", val)}
+                options={departmentOptions}
+                fullWidth
+                size="medium"
               />
             </Grid>
 
             <Grid item xs={6}>
-              <FormControl fullWidth>
-                <InputLabel shrink>Reporting Manager</InputLabel>
-                <Select
-                  value={form.reporting_manager}
-                  onChange={(e) => handleChange("reporting_manager", e.target.value)}
-                  displayEmpty
-                  label="Reporting Manager"
-                >
-                  <MenuItem value="">--Select--</MenuItem>
-                  <MenuItem value="john">John Doe</MenuItem>
-                  <MenuItem value="jane">Jane Smith</MenuItem>
-                </Select>
-              </FormControl>
+              <DebouncedSelect
+                label="Reporting Manager"
+                placeholder="Select Reporting Manager"
+                value={form.reporting_manager}
+                onChange={(val) => handleChange("reporting_manager", val)}
+                options={reportingManagerOptions}
+                fullWidth
+                size="medium"
+              />
             </Grid>
           </Grid>
         </Box>
@@ -247,10 +274,10 @@ const AddEmployeeModal = ({ open, onClose }) => {
 
       {/* Footer with Role and Active on left, buttons on right */}
       <Divider />
-      <Box 
-        sx={{ 
-          display: 'flex', 
-          justifyContent: 'space-between', 
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
           px: 3,
           py: 2

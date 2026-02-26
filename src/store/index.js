@@ -6,6 +6,7 @@ import uiReducer from "./slices/uiSlice";
 import clientReducer from "./slices/features/clientSlice";
 import quoteReducer from "./slices/features/quoteSlice";
 import jobReducer from "./slices/features/jobSlice";
+import employeeReducer from "./slices/features/employeeSlice";
 
 // Custom middleware for API error handling
 const apiMiddleware = (store) => (next) => (action) => {
@@ -28,6 +29,7 @@ export const store = configureStore({
     clients: clientReducer,
     quotes: quoteReducer,
     jobs: jobReducer,
+    employees: employeeReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

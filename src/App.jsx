@@ -35,8 +35,8 @@ import JobDetails from './features/jobs/pages/JobDetails';
 import OnlineBooking from './features/bookings/pages/OnlineBooking';
 import JobList from './features/jobs/pages/JobList';
 import EmployeeList from './features/employees/pages/EmployeeList';
-import TestComponent from './features/employees/components/EmployeeForm/TestComponent';
-import PermissionMaster from './features/employees/components/EmployeeForm/PermissionMaster';
+import TestPage from './pages/TestPage';
+
 
 const AppContent = () => {
   const { loadAuthState, user } = useAuth();
@@ -83,14 +83,15 @@ const AppContent = () => {
         <Route path="/reports" element={<div>Reports</div>} />
         <Route path="/settings" element={<div>Settings</div>} /> */}
 
-        {/* <Route path="/employees" element={<EmployeeList />} /> */}
-        {/* <Route path="/employees" element={<PermissionMaster />} /> */}
+        <Route path="/employees" element={<EmployeeList />} />
 
         <Route path="/invoices" element={<NotYetDesigned />} />
         <Route path="/timesheets" element={<NotYetDesigned />} />
         <Route path="/online-booking" element={<NotYetDesigned />} />
         <Route path="/reports" element={<NotYetDesigned />} />
         <Route path="/settings" element={<NotYetDesigned />} />
+        {/* <Route path="/test" element={<TestPage />} /> */}
+
       </Route>
 
       {/* Redirects */}

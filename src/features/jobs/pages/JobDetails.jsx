@@ -1,4 +1,4 @@
-// src/pages/Jobs/JobDetails/index.jsx
+// src/pages/Jobs/JobDetails.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Grid, CircularProgress, Box, Typography, Button } from '@mui/material';
@@ -68,7 +68,7 @@ const JobDetails = () => {
   const handleUpdateJob = async (data) => {
     try {
       await updateJob(id, data);
-      showToast('Job updated successfully', 'success');
+      //showToast('Job updated successfully', 'success');
     } catch (error) {
       // Error is already handled in the hook
     }
@@ -220,6 +220,7 @@ const JobDetails = () => {
           { label: 'Jobs', path: '/jobs' },
           { label: currentJob?.job_number || '', current: true }
         ]}
+
         action={
           <JobActionMenu
             status={currentJob?.status}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { TextField, MenuItem } from '@mui/material';
+import { TextField, MenuItem, CircularProgress, InputAdornment } from '@mui/material';
 
 const DebouncedSelect = ({ 
   value: propValue, 
@@ -7,6 +7,8 @@ const DebouncedSelect = ({
   delay = 300, 
   options = [],
   onBlur,
+  loading = false,
+  loadingLabel = "Loading",
   ...props 
 }) => {
   const [value, setValue] = useState(propValue || '');
@@ -46,19 +48,46 @@ const DebouncedSelect = ({
     setValue(e.target.value);
   }, []);
 
+  // Determine what to show in the select
+  const getDisplayValue = () => {
+    if (loading) {
+      return ''; // Return empty when loading to show loading state
+    }
+    return value;
+  };
+
   return (
     <TextField
       {...props}
-      select
-      value={value}
+      select={!loading} // Disable select functionality when loading
+      value={getDisplayValue()}
       onChange={handleChange}
       onBlur={handleBlur}
+      disabled={loading || props.disabled}
+      InputProps={{
+        ...props.InputProps,
+        endAdornment: loading ? (
+          <InputAdornment position="end">
+            <CircularProgress size={20} />
+          </InputAdornment>
+        ) : props.InputProps?.endAdornment
+      }}
+      SelectProps={{
+        ...props.SelectProps,
+        IconComponent: loading ? () => null : props.SelectProps?.IconComponent // Hide chevron when loading
+      }}
     >
-      {options.map((option) => (
-        <MenuItem key={option.value} value={option.value}>
-          {option.label}
+      {loading ? (
+        <MenuItem value="" disabled>
+          {loadingLabel}...
         </MenuItem>
-      ))}
+      ) : (
+        options.map((option) => (
+          <MenuItem key={option.value} value={option.value}>
+            {option.label}
+          </MenuItem>
+        ))
+      )}
     </TextField>
   );
 };

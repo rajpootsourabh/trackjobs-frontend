@@ -86,6 +86,8 @@ const InstructionsSection = ({
     const [attachments, setAttachments] = useState(initialAttachments);
     const [uploading, setUploading] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const isSubmittingRef = useRef(false);
+    const submitCountRef = useRef(0);
 
     // Update local state when props change
     useEffect(() => {
@@ -119,43 +121,29 @@ const InstructionsSection = ({
         setTempInstructions('');
     };
 
-    // In InstructionsSection.jsx - updated handleSave function
 
     const handleSave = async () => {
         if (!currentJobId) return;
 
         setUpdating(true);
-        try {
-            // Store current attachments before update
-            const currentAttachments = attachments;
 
+        // Store current attachments before update
+        const currentAttachments = attachments;
+
+        try {
             // Use the updateJob from the hook
             await updateJob(currentJobId, { instructions: tempInstructions });
 
             // Update local state immediately
             setInstructions(tempInstructions);
 
-            // CRITICAL: Restore attachments if they were cleared
-            // // Wait a bit and then check if attachments are still there
-            // setTimeout(async () => {
-            //     try {
-            //         // Fetch the latest job data
-            //         const refreshedJob = await getJob(currentJobId);
-            //         if (refreshedJob) {
-            //             // If attachments are missing in the response, restore them
-            //             if (!refreshedJob.attachments_by_context?.instructions ||
-            //                 refreshedJob.attachments_by_context.instructions.length === 0) {
-            //                 // Force restore attachments from our saved state
-            //                 setAttachments(currentAttachments);
-            //             }
-            //         }
-            //     } catch (err) {
-            //         console.error('Error refreshing job after update:', err);
-            //     }
-            // }, 500);
+            // Restore attachments (API doesn't return them)
+            setAttachments(currentAttachments);
 
             setEditDialogOpen(false);
-            // showToast('Instructions updated successfully', 'success');
+
+            // Show toast only once here
+            showToast('Instructions updated successfully', 'success');
 
             // Call the onUpdate callback if provided
             if (onUpdate) {
@@ -441,6 +429,7 @@ const InstructionsSection = ({
                                             }
                                         }}
                                     >
+                                        {/* Single child - either a div or a fragment with multiple elements */}
                                         {imageItem ? (
                                             <>
                                                 <img
@@ -496,7 +485,7 @@ const InstructionsSection = ({
                                             </Box>
                                         )}
 
-                                        {/* Overlay for all files */}
+                                        {/* Overlay for all files - this is a separate element but still within the same ImageListItem */}
                                         <Box
                                             className="image-overlay"
                                             sx={{

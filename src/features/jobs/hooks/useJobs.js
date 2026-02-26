@@ -68,7 +68,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
           perPage: pagination.perPage,
           filters,
           sort,
-        })
+        }),
       ).unwrap();
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -106,28 +106,28 @@ export const useJobs = ({ autoFetch = true } = {}) => {
     (searchTerm) => {
       dispatch(setFilters({ search: searchTerm }));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleFilterChange = useCallback(
     (newFilters) => {
       dispatch(setFilters(newFilters));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handleSort = useCallback(
     (field, direction) => {
       dispatch(setSort({ field, direction }));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const handlePageChange = useCallback(
     (event, newPage) => {
       dispatch(setCurrentPage(newPage + 1));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const refresh = useCallback(() => {
@@ -148,7 +148,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
         throw new Error(msg);
       }
     },
-    [dispatch, showToast]
+    [dispatch, showToast],
   );
 
   const createJobHandler = useCallback(
@@ -159,29 +159,31 @@ export const useJobs = ({ autoFetch = true } = {}) => {
         setTimeout(() => refresh(), 500);
         return result;
       } catch (err) {
-        const msg = err?.message || err?.data?.message || "Failed to create job";
+        const msg =
+          err?.message || err?.data?.message || "Failed to create job";
         setLocalError(msg);
         showToast(msg, "error");
         throw err;
       }
     },
-    [dispatch, refresh, showToast]
+    [dispatch, refresh, showToast],
   );
 
   const updateJobHandler = useCallback(
     async (id, data) => {
       try {
         const result = await dispatch(updateJob({ id, data })).unwrap();
-        showToast("Job updated successfully", "success");
+        //showToast("Job updated successfully", "success");
         return result;
       } catch (err) {
-        const msg = err?.message || err?.data?.message || "Failed to update job";
+        const msg =
+          err?.message || err?.data?.message || "Failed to update job";
         setLocalError(msg);
         showToast(msg, "error");
         throw err;
       }
     },
-    [dispatch, showToast]
+    [dispatch, showToast],
   );
 
   const deleteJobHandler = useCallback(
@@ -191,13 +193,14 @@ export const useJobs = ({ autoFetch = true } = {}) => {
         showToast("Job deleted successfully", "success");
         setTimeout(() => refresh(), 500);
       } catch (err) {
-        const msg = err?.message || err?.data?.message || "Failed to delete job";
+        const msg =
+          err?.message || err?.data?.message || "Failed to delete job";
         setLocalError(msg);
         showToast(msg, "error");
         throw err;
       }
     },
-    [dispatch, refresh, showToast]
+    [dispatch, refresh, showToast],
   );
 
   const changeJobStatus = useCallback(
@@ -205,22 +208,26 @@ export const useJobs = ({ autoFetch = true } = {}) => {
       try {
         // Optimistic update
         dispatch(setJobStatus({ id, status }));
-        
+
         const result = await dispatch(updateJobStatus({ id, status })).unwrap();
-        showToast(`Job status updated to ${status.replace("_", " ")}`, "success");
+        showToast(
+          `Job status updated to ${status.replace("_", " ")}`,
+          "success",
+        );
         return result;
       } catch (err) {
         // Revert optimistic update on error
         if (currentJob?.id === id) {
           dispatch(fetchJobById(id));
         }
-        const msg = err?.message || err?.data?.message || "Failed to update status";
+        const msg =
+          err?.message || err?.data?.message || "Failed to update status";
         setLocalError(msg);
         showToast(msg, "error");
         throw err;
       }
     },
-    [dispatch, showToast, currentJob]
+    [dispatch, showToast, currentJob],
   );
 
   /* ---------------------------------------------------------
@@ -240,7 +247,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
       try {
         // Optimistic update
         dispatch(addTaskLocally({ jobId, task: tempTask }));
-        
+
         const result = await dispatch(addTask({ jobId, taskData })).unwrap();
         showToast("Task added successfully", "success");
         return result;
@@ -255,19 +262,21 @@ export const useJobs = ({ autoFetch = true } = {}) => {
         throw err;
       }
     },
-    [dispatch, showToast, currentJob]
+    [dispatch, showToast, currentJob],
   );
 
   const toggleTaskHandler = useCallback(
     async (jobId, taskId, currentCompleted) => {
       try {
         // Optimistic update
-        dispatch(toggleTaskLocally({ 
-          jobId, 
-          taskId, 
-          completed: !currentCompleted 
-        }));
-        
+        dispatch(
+          toggleTaskLocally({
+            jobId,
+            taskId,
+            completed: !currentCompleted,
+          }),
+        );
+
         const result = await dispatch(toggleTask({ jobId, taskId })).unwrap();
         return result;
       } catch (err) {
@@ -275,13 +284,14 @@ export const useJobs = ({ autoFetch = true } = {}) => {
         if (currentJob?.id === jobId) {
           dispatch(fetchJobById(jobId));
         }
-        const msg = err?.message || err?.data?.message || "Failed to update task";
+        const msg =
+          err?.message || err?.data?.message || "Failed to update task";
         setLocalError(msg);
         showToast(msg, "error");
         throw err;
       }
     },
-    [dispatch, showToast, currentJob]
+    [dispatch, showToast, currentJob],
   );
 
   const deleteTaskHandler = useCallback(
@@ -289,7 +299,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
       try {
         // Optimistic update
         dispatch(deleteTaskLocally({ jobId, taskId }));
-        
+
         await dispatch(deleteTask({ jobId, taskId })).unwrap();
         showToast("Task deleted successfully", "success");
       } catch (err) {
@@ -297,13 +307,14 @@ export const useJobs = ({ autoFetch = true } = {}) => {
         if (currentJob?.id === jobId) {
           dispatch(fetchJobById(jobId));
         }
-        const msg = err?.message || err?.data?.message || "Failed to delete task";
+        const msg =
+          err?.message || err?.data?.message || "Failed to delete task";
         setLocalError(msg);
         showToast(msg, "error");
         throw err;
       }
     },
-    [dispatch, showToast, currentJob]
+    [dispatch, showToast, currentJob],
   );
 
   /* ---------------------------------------------------------
@@ -316,34 +327,41 @@ export const useJobs = ({ autoFetch = true } = {}) => {
       const tempAttachment = {
         id: tempId,
         file_name: fileName || file.name,
-        file_type: file.type?.startsWith('image/') ? 'image' : 
-                  file.type === 'application/pdf' ? 'pdf' : 'document',
-        extension: file.name?.split('.').pop()?.toUpperCase() || 'FILE',
-        uploaded_at: new Date().toLocaleDateString('en-US', {
-          month: 'short', day: 'numeric', year: 'numeric'
+        file_type: file.type?.startsWith("image/")
+          ? "image"
+          : file.type === "application/pdf"
+            ? "pdf"
+            : "document",
+        extension: file.name?.split(".").pop()?.toUpperCase() || "FILE",
+        uploaded_at: new Date().toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
         }),
         formatted_size: formatFileSize(file.size),
         url: URL.createObjectURL(file), // Temporary URL
-        context: options.context || 'general',
+        context: options.context || "general",
       };
 
       try {
         // Optimistic update
-        dispatch(addAttachmentLocally({ 
-          jobId, 
-          attachment: tempAttachment,
-          context: options.context || 'general'
-        }));
-        
+        dispatch(
+          addAttachmentLocally({
+            jobId,
+            attachment: tempAttachment,
+            context: options.context || "general",
+          }),
+        );
+
         const result = await dispatch(
           addAttachment({
             jobId,
             file,
             fileName: fileName || file.name,
             options,
-          })
+          }),
         ).unwrap();
-        
+
         showToast("File uploaded successfully", "success");
         return result;
       } catch (err) {
@@ -351,13 +369,14 @@ export const useJobs = ({ autoFetch = true } = {}) => {
         if (currentJob?.id === jobId) {
           dispatch(fetchJobById(jobId));
         }
-        const msg = err?.message || err?.data?.message || "Failed to upload file";
+        const msg =
+          err?.message || err?.data?.message || "Failed to upload file";
         setLocalError(msg);
         showToast(msg, "error");
         throw err;
       }
     },
-    [dispatch, showToast, currentJob]
+    [dispatch, showToast, currentJob],
   );
 
   const deleteAttachmentHandler = useCallback(
@@ -365,7 +384,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
       try {
         // Optimistic update
         dispatch(deleteAttachmentLocally({ jobId, attachmentId, context }));
-        
+
         await dispatch(deleteAttachment({ jobId, attachmentId })).unwrap();
         showToast("Attachment deleted successfully", "success");
       } catch (err) {
@@ -373,20 +392,22 @@ export const useJobs = ({ autoFetch = true } = {}) => {
         if (currentJob?.id === jobId) {
           dispatch(fetchJobById(jobId));
         }
-        const msg = err?.message || err?.data?.message || "Failed to delete attachment";
+        const msg =
+          err?.message || err?.data?.message || "Failed to delete attachment";
         setLocalError(msg);
         showToast(msg, "error");
         throw err;
       }
     },
-    [dispatch, showToast, currentJob]
+    [dispatch, showToast, currentJob],
   );
 
   const getJobStatsHandler = useCallback(async () => {
     try {
       return await dispatch(fetchJobStats()).unwrap();
     } catch (err) {
-      const msg = err?.message || err?.data?.message || "Failed to fetch statistics";
+      const msg =
+        err?.message || err?.data?.message || "Failed to fetch statistics";
       setLocalError(msg);
       showToast(msg, "error");
       throw err;
@@ -398,24 +419,24 @@ export const useJobs = ({ autoFetch = true } = {}) => {
   --------------------------------------------------------- */
   const updateFilters = useCallback(
     (newFilters) => dispatch(setFilters(newFilters)),
-    [dispatch]
+    [dispatch],
   );
 
   const updateSort = useCallback(
     (field, direction) => dispatch(setSort({ field, direction })),
-    [dispatch]
+    [dispatch],
   );
 
   const setPage = useCallback(
     (page) => dispatch(setCurrentPage(page)),
-    [dispatch]
+    [dispatch],
   );
 
   const handleSetPerPage = useCallback(
     (perPage) => {
       dispatch(setPerPage(perPage));
     },
-    [dispatch]
+    [dispatch],
   );
 
   const resetAllFilters = useCallback(() => {
@@ -428,7 +449,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
   --------------------------------------------------------- */
   const clearCurrent = useCallback(
     () => dispatch(clearCurrentJob()),
-    [dispatch]
+    [dispatch],
   );
 
   const clearJobError = useCallback(() => {
@@ -438,7 +459,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
 
   const clearJobSuccess = useCallback(
     () => dispatch(clearSuccess()),
-    [dispatch]
+    [dispatch],
   );
 
   /* ---------------------------------------------------------
@@ -446,12 +467,12 @@ export const useJobs = ({ autoFetch = true } = {}) => {
   --------------------------------------------------------- */
   const getJobsByStatus = useCallback(
     (status) => jobs.filter((j) => j.status === status),
-    [jobs]
+    [jobs],
   );
 
   const getJobsByWorkType = useCallback(
     (workType) => jobs.filter((j) => j.work_type === workType),
-    [jobs]
+    [jobs],
   );
 
   const getTotalJobsValue = useCallback(
@@ -459,7 +480,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
       const filtered = status ? jobs.filter((j) => j.status === status) : jobs;
       return filtered.reduce((sum, j) => sum + (j.total_amount || 0), 0);
     },
-    [jobs]
+    [jobs],
   );
 
   /* ---------------------------------------------------------
@@ -495,7 +516,7 @@ export const useJobs = ({ autoFetch = true } = {}) => {
     },
     filters,
     sort,
-    
+
     // Job operations
     loadJobs: refresh,
     handleSearch,
@@ -508,36 +529,36 @@ export const useJobs = ({ autoFetch = true } = {}) => {
     updateJob: updateJobHandler,
     deleteJob: deleteJobHandler,
     changeJobStatus,
-    
+
     // Task operations
     addTask: addTaskHandler,
     toggleTask: toggleTaskHandler,
     deleteTask: deleteTaskHandler,
-    
+
     // Attachment operations
     addAttachment: addAttachmentHandler,
     deleteAttachment: deleteAttachmentHandler,
-    
+
     // Stats
     getJobStats: getJobStatsHandler,
-    
+
     // Filter utilities
     updateFilters,
     updateSort,
     setPage,
     setPerPage: handleSetPerPage,
     resetFilters: resetAllFilters,
-    
+
     // Derived data
     getJobsByStatus,
     getJobsByWorkType,
     getTotalJobsValue,
-    
+
     // Clear functions
     clearCurrent,
     clearError: clearJobError,
     clearSuccess: clearJobSuccess,
-    
+
     // Helpers
     formatFileSize,
   };

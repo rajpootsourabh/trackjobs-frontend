@@ -7,19 +7,42 @@ import {
     Chip,
     IconButton,
 } from "@mui/material";
-import { Edit, Delete } from "@mui/icons-material";
 import ProfileAvatar from "../../../../components/common/avatar/ProfileAvatar";
 import EllipsisText from "../../../../components/common/EllipsisText";
-import { DeleteIcon, Edit3Icon, LucideDelete, Pen, PenIcon, Trash, Trash2 } from "lucide-react";
+import { PenIcon, Trash2 } from "lucide-react";
+import { DESIGNATION_VALUE_TO_LABEL } from "../../constants/employeeConstants";
 
-const getStatusStyle = (status) => {
-    if (status === "active") {
-        return { bgcolor: "#e6f4ea", color: "#1e7e34" };
-    }
-    return { bgcolor: "#fdecea", color: "#d32f2f" };
-};
+const EmployeeTableRow = ({
+    employee,
+    isSelected,
+    onSelect,
+    onEdit,
+    onDelete
+}) => {
 
-const EmployeeTableRow = ({ employee, isSelected, onSelect }) => {
+    // Add debug console
+    console.log("EmployeeTableRow received:", { employee, onEdit, onDelete });
+
+    const handleEditClick = (e) => {
+        e.stopPropagation(); // Prevent event bubbling
+        console.log("Edit clicked for employee:", employee.id);
+        if (onEdit) {
+            onEdit(employee.id);
+        } else {
+            console.warn("onEdit prop is not provided");
+        }
+    };
+
+    const handleDeleteClick = (e) => {
+        e.stopPropagation(); // Prevent event bubbling
+        console.log("Delete clicked for employee:", employee.id);
+        if (onDelete) {
+            onDelete(employee.id);
+        } else {
+            console.warn("onDelete prop is not provided");
+        }
+    };
+
     return (
         <TableRow
             hover
@@ -28,7 +51,6 @@ const EmployeeTableRow = ({ employee, isSelected, onSelect }) => {
                 height: 73,
                 "& .MuiTableCell-root": {
                     py: 2,
-                    // REMOVE fontSize from here
                 },
                 '&:hover': {
                     backgroundColor: 'rgba(0,0,0,0.02)',
@@ -92,7 +114,7 @@ const EmployeeTableRow = ({ employee, isSelected, onSelect }) => {
             {/* Designation */}
             <TableCell>
                 <EllipsisText
-                    text={employee.designation}
+                    text={DESIGNATION_VALUE_TO_LABEL[employee.designation] || employee.designation || "N/A"}
                     sx={{ maxWidth: 100, fontSize: '0.875rem' }}
                 />
             </TableCell>
@@ -108,7 +130,7 @@ const EmployeeTableRow = ({ employee, isSelected, onSelect }) => {
             {/* Phone */}
             <TableCell>
                 <EllipsisText
-                    text={employee.phone}
+                    text={employee.mobile_number}
                     sx={{ maxWidth: 130, fontSize: '0.875rem' }}
                 />
             </TableCell>
@@ -116,17 +138,17 @@ const EmployeeTableRow = ({ employee, isSelected, onSelect }) => {
             {/* Status */}
             <TableCell>
                 <Chip
-                    label={employee.status === "active" ? "Active" : "Inactive"}
+                    label={employee.is_active ? "Active" : "Inactive"}
                     size="small"
                     sx={{
-                        bgcolor: employee.status === "active" ? "#35a370" : "#d32f2f",
+                        bgcolor: employee.is_active ? "#35a370" : "#d32f2f",
                         color: "#ffffff",
                         borderRadius: '12px',
                         fontWeight: 500,
                         fontSize: '0.75rem',
                         height: 20,
                         '& .MuiChip-label': {
-                            fontSize: '0.75rem', // Match chip text size
+                            fontSize: '0.75rem',
                             px: 1,
                             lineHeight: 1,
                         }
@@ -137,11 +159,16 @@ const EmployeeTableRow = ({ employee, isSelected, onSelect }) => {
             {/* Actions */}
             <TableCell align="center">
                 <Box sx={{ display: "flex", justifyContent: "center", gap: 0 }}>
-                    <IconButton size="small" sx={{ p: '4px' }}>
+                    <IconButton
+                        size="small"
+                        onClick={handleEditClick} // ✅ Use the handler
+                        sx={{ p: '4px' }}
+                    >
                         <PenIcon style={{ width: 16, height: 16 }} />
                     </IconButton>
                     <IconButton
                         size="small"
+                        onClick={handleDeleteClick} // ✅ Use the handler
                         sx={{
                             p: '4px',
                             '&:hover': {
