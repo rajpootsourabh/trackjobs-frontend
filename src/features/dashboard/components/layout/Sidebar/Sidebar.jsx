@@ -13,7 +13,8 @@ import {
   Settings,
   Clock10,
   Calendar1Icon,
-  Book
+  Book,
+  Quote
 } from 'lucide-react';
 
 const Sidebar = () => {
@@ -28,13 +29,13 @@ const Sidebar = () => {
   const icons = {
     dashboard: <LayoutDashboard size={18} />,
     customers: <Users size={18} />,
-    quotes: <FileText size={18} />,
+    quotes: <Quote size={18} />,
     jobs: <Briefcase size={18} />,
     schedule: <Calendar size={18} />,
     invoices: <Receipt size={18} />,
     timesheets: <Calendar1Icon size={18} />,
-    booking: <Book size={18} />,
-    employees: <Clock10 size={18} />,
+    booking: <Calendar size={18} />,
+    employees: <Users size={18} />,
     reports: <BarChart3 size={18} />,
     settings: <Settings size={18} />,
   };
